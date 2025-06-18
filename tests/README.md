@@ -1,49 +1,50 @@
 # Tests
 
-This directory contains all test files for the EdgeFlow Kafka Client Node-RED nodes.
+This directory contains simplified tests for the Kafka Node-RED nodes.
 
-## Test Files
+## Available Tests
 
-- **comprehensive-test.js** - Comprehensive test for the Kafka Schema Send Node
-- **test-node-loading.js** - Test to verify the broker.getKafka() method works correctly  
-- **test-schema-producer.js** - Integration test for the Kafka Schema Send functionality
-- **run-tests.js** - Test runner utility that executes all tests with proper error handling
+- **`basic-kafka-test.js`** - Complete integration test using testcontainers to simulate a Kafka server, tests both producer and consumer functionality
+- **`test-node-loading.js`** - Simple test to verify node modules load correctly
+- **`comprehensive-test.js`** - Tests node instantiation and basic configuration
+- **`test-node-structure.js`** - Validates the node structure and exports
 
 ## Running Tests
 
-### Run all tests
+### Run All Tests
 ```bash
 npm test
 ```
 
-### Run individual tests
+### Run Individual Tests
 ```bash
-npm run test:comprehensive    # Run comprehensive Kafka Schema Send test
-npm run test:loading         # Run node loading test
-npm run test:schema          # Run Kafka Schema Send integration test
+# Basic Kafka integration test with embedded server
+npm run test:basic
+
+# Node loading test
+npm run test:loading
+
+# Comprehensive node test
+npm run test:comprehensive
 ```
 
-### Run tests individually with Node.js
-```bash
-node tests/comprehensive-test.js
-node tests/test-node-loading.js
-node tests/test-schema-producer.js
-```
+## Test Features
 
-## Test Requirements
+The tests focus on basic Kafka functionality without schema validation:
 
-The tests require:
-- Node.js >= 14.6.0 (as specified in package.json)
-- Kafka broker running on localhost:9092 (for integration tests)
-- Schema Registry running on localhost:8081 (for schema tests)
-- All Node-RED node modules in the `js/` directory
+- **Producer Node**: Tests message publishing with and without IoT formatting
+- **Consumer Node**: Tests message consumption with different encoding options
+- **Broker Node**: Tests connection configuration and Kafka client creation
 
-## Test Structure
+## Dependencies
 
-All tests mock the Node-RED environment and test the functionality of the Kafka nodes without requiring a full Node-RED installation.
+Tests use:
+- `testcontainers` for embedded Kafka server simulation
+- `kafkajs` for actual Kafka operations
+- Mock Node-RED environment for node testing
 
-The improved node names make it clearer what each node does:
-- **Kafka Broker** - Manages connection configuration
-- **Kafka Send** - Publishes messages to topics  
-- **Kafka Receive** - Subscribes to and receives messages
-- **Kafka Schema Send** - Publishes messages with Avro schema validation
+## Notes
+
+- Schema validation tests have been removed to focus on core functionality
+- Tests use an embedded Kafka container for realistic integration testing
+- All tests run without requiring external Kafka infrastructure

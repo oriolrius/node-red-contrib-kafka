@@ -46,21 +46,30 @@ const RED = {
     }
 };
 
-// Test loading the schema producer
+// Test loading the producer and consumer nodes
 try {
-    console.log('🧪 Testing Schema Producer Node Loading...');
+    console.log('🧪 Testing Kafka Node Loading...');
     console.log('='.repeat(50));
     
-    // Load the schema producer module
-    const schemaProducerModule = require('../js/kafka-schema-producer.js');
+    // Load the producer module
+    console.log('Loading Producer Node...');
+    const producerModule = require('../js/kafka-producer.js');
+    producerModule(RED);
     
-    // Call the module with mock RED
-    schemaProducerModule(RED);
+    // Load the consumer module
+    console.log('Loading Consumer Node...');
+    const consumerModule = require('../js/kafka-consumer.js');
+    consumerModule(RED);
     
-    console.log('\n🎉 Schema Producer Node loaded successfully!');
+    // Load the broker module
+    console.log('Loading Broker Node...');
+    const brokerModule = require('../js/kafka-broker.js');
+    brokerModule(RED);
+    
+    console.log('\n🎉 All Kafka Nodes loaded successfully!');
     console.log('✅ The broker.getKafka() method fix is working correctly.');
     
 } catch (error) {
-    console.error('❌ Error loading Schema Producer Node:', error.message);
+    console.error('❌ Error loading Kafka Nodes:', error.message);
     console.error('Full error:', error);
 }

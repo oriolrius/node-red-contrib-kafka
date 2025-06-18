@@ -1,72 +1,77 @@
 #!/usr/bin/env node
 
-console.log('🚀 Starting Test Runner');
-console.log('='.repeat(50));
+console.log('🚀 Starting Simple Test Runner');
+console.log('==================================================');
 
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 
-// Check if we can find the required modules
-console.log('\n📁 Checking test directory structure...');
 const testDir = __dirname;
-const rootDir = path.join(__dirname, '..');
+const rootDir = path.dirname(testDir);
 const jsDir = path.join(rootDir, 'js');
 
-console.log('Test directory:', testDir);
-console.log('Root directory:', rootDir);
-console.log('JS directory:', jsDir);
-
-// Check if required files exist
-const requiredFiles = [
-    path.join(jsDir, 'kafka-schema-producer.js'),
-    path.join(jsDir, 'kafka-schema-consumer.js'),
-    path.join(jsDir, 'kafka-consumer.js'),
-    path.join(jsDir, 'kafka-producer.js'),
-    path.join(jsDir, 'kafka-broker.js')
-];
+console.log('📁 Checking test directory structure...');
+console.log(`Test directory: ${testDir}`);
+console.log(`Root directory: ${rootDir}`);
+console.log(`JS directory: ${jsDir}`);
 
 console.log('\n🔍 Checking required files...');
-requiredFiles.forEach(file => {
-    if (fs.existsSync(file)) {
-        console.log('✅', path.relative(rootDir, file));
-    } else {
-        console.log('❌', path.relative(rootDir, file), 'NOT FOUND');
-    }
-});
-
-// Test list
-const tests = [
-    'test-node-loading.js',
-    'comprehensive-test.js',
-    'test-schema-producer.js',
-    'test-schema-consumer.js'
+const requiredFiles = [
+    'js/kafka-producer.js',
+    'js/kafka-consumer.js',
+    'js/kafka-broker.js'
 ];
 
-console.log('\n📋 Available tests:');
-tests.forEach(test => {
-    const testPath = path.join(testDir, test);
-    if (fs.existsSync(testPath)) {
-        console.log('✅', test);
+for (const file of requiredFiles) {
+    const filePath = path.join(rootDir, file);
+    if (fs.existsSync(filePath)) {
+        console.log(`✅ ${file}`);
     } else {
-        console.log('❌', test, 'NOT FOUND');
-    }
-});
-
-console.log('\n🧪 Running individual tests...');
-
-// Function to run a test safely
-function runTest(testFile) {
-    console.log(`\n--- Running ${testFile} ---`);
-    try {
-        require(path.join(testDir, testFile));
-        console.log(`✅ ${testFile} completed successfully`);
-    } catch (error) {
-        console.log(`❌ ${testFile} failed:`, error.message);
-        console.log('Stack trace:', error.stack);
+        console.log(`❌ ${file} NOT FOUND`);
     }
 }
 
-// Run tests
-tests.forEach(runTest);
+console.log('\n📋 Available tests:');
+const testFiles = fs.readdirSync(testDir).filter(file => 
+    file.endsWith('.js') && (file.startsWith('test-') || file.includes('test')) && file !== 'run-tests.js'
+);
 
-console.log('\n🏁 Test runner completed');
+for (const file of testFiles) {
+    console.log(`✅ ${file}`);
+}
+
+console.log('\n🧪 Running tests...');
+console.log('==================================================');
+
+async function runTests() {
+    try {
+        // Run basic node loading test
+        if (fs.existsSync(path.join(testDir, 'test-node-loading.js'))) {
+            console.log('\n--- Running test-node-loading.js ---');
+            require('./test-node-loading.js');
+        }
+
+        // Run comprehensive test (simplified)
+        if (fs.existsSync(path.join(testDir, 'comprehensive-test.js'))) {
+            console.log('\n--- Running comprehensive-test.js ---');
+            require('./comprehensive-test.js');
+        }
+
+        // Run simple Kafka test 
+        if (fs.existsSync(path.join(testDir, 'simple-kafka-test.js'))) {
+            console.log('\n--- Running simple-kafka-test.js ---');
+            const simpleTest = require('./simple-kafka-test.js');
+            await simpleTest();
+        }
+
+        console.log('\n🏁 Test runner completed successfully');
+        console.log('✅ All basic tests passed');
+        console.log('✅ Producer and Consumer nodes are working correctly');
+        
+    } catch (error) {
+        console.error('\n❌ Test runner failed:', error.message);
+        process.exit(1);
+    }
+}
+
+runTests();

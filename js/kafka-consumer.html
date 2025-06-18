@@ -1,100 +1,168 @@
 <script type="text/html" data-help-name="hm-kafka-consumer">
     <p>Receive messages from a Kafka topic.</p>
-    <p>This node subscribes to a Kafka topic and outputs received messages as msg.payload.</p>
-    <p>Messages include topic, partition, offset, key, value, and timestamp information.</p>
-    <p>Supports configurable consumer groups, offset management, and message encoding options.</p>
+    <p>This node subscribes to the specified Kafka topic and outputs received messages.</p>
+    <p>Optionally decodes message payloads using registered Avro schemas from Confluent Schema Registry.</p>
+    <p>Messages are output as they are received. Use the groupid property to control message distribution across multiple consumers.</p>
 </script>
 
 <script type="text/html" data-template-name="hm-kafka-consumer">
+
     <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name </label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     
     <div class="form-row">
-    	<label for="node-input-broker"><i class="fa fa-list-ul"></i> Broker</label>
-    	<input type="text" id="node-input-broker">
+        <label for="node-input-broker"><i class="fa fa-list-ul"></i> Broker </label>
+        <input type="text" id="node-input-broker">
     </div>
-      
+
     <div class="form-row">
-        <label for="node-input-groupid"><i class="fa fa-tag"></i> Group Id (Optional)</label>
-        <input type="text" id="node-input-groupid" placeholder="e.g:'nodered_kafka_client_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'">
-    </div>
-    <div class="form-row">
-        <label for="node-input-topic"><i class="fa fa-tag"></i> Topic</label>
+        <label for="node-input-topic"><i class="fa fa-tag"></i> Topic </label>
         <input type="text" id="node-input-topic" placeholder="Topic">
     </div>
 
     <div class="form-row">
-        <label for="node-input-minbytes"><i class="fa fa-tag"></i> Min Bytes</label>
-        <input type="number" id="node-input-minbytes" placeholder="Default: 1" step=1000 min=1>
+        <label for="node-input-groupid"><i class="fa fa-users"></i> Group ID </label>
+        <input type="text" id="node-input-groupid" placeholder="Leave empty for auto-generated">
     </div>
 
     <div class="form-row">
-        <label for="node-input-maxbytes"><i class="fa fa-tag"></i> Max Bytes</label>
-        <input type="number" id="node-input-maxbytes" placeholder="Default: 1024*1024" step=1000 min=1>
+        <label for="node-input-fromOffset"><i class="fa fa-tag"></i> From Offset </label>
+        <select id="node-input-fromOffset">
+            <option value="latest">Latest</option>
+            <option value="earliest">Earliest</option>
+            <option value="none">None</option>
+        </select>
     </div>
 
     <div class="form-row">
-        <label for="node-input-fromOffset"><i class="fa fa-tag"></i> From Offset</label>
-         <select id="node-input-fromOffset">
-         	<option value="latest">latest</option>
-         	<option value="earliest">earliest</option>
-         	<option value="none">none</option>
-         </select>
+        <label for="node-input-outOfRangeOffset"><i class="fa fa-tag"></i> Out of Range Offset </label>
+        <select id="node-input-outOfRangeOffset">
+            <option value="latest">Latest</option>
+            <option value="earliest">Earliest</option>
+            <option value="none">None</option>
+        </select>
     </div>
 
     <div class="form-row">
-        <label for="node-input-outOfRangeOffset"><i class="fa fa-tag"></i> Out of Range Offset</label>
-         <select id="node-input-outOfRangeOffset">
-         	<option value="latest">earliest</option>
-         	<option value="earliest">latest</option>
-         	<option value="none">none</option>
-         </select>
+        <label for="node-input-encoding"><i class="fa fa-tag"></i> Encoding </label>
+        <select id="node-input-encoding">
+            <option value="utf8">UTF-8</option>
+            <option value="ascii">ASCII</option>
+            <option value="base64">Base64</option>
+            <option value="hex">Hex</option>
+        </select>
     </div>
 
     <div class="form-row">
-        <label for="node-input-encoding"><i class="fa fa-tag"></i> Message encoding</label>
-         <select id="node-input-encoding">
-         	<option value="utf8">UTF-8</option>
-         	<option value="buffer">buffer</option>
-         </select>
+        <label for="node-input-minbytes"><i class="fa fa-tag"></i> Min Bytes </label>
+        <input type="number" id="node-input-minbytes" placeholder="1" min="1">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-maxbytes"><i class="fa fa-tag"></i> Max Bytes </label>
+        <input type="number" id="node-input-maxbytes" placeholder="1048576" min="1">
+    </div>
+
+    <!-- Schema Validation Section -->
+    <hr/>
+    <div class="form-row">
+		<input type="checkbox" id="node-input-useSchemaValidation" style="display: inline-block; width: auto; vertical-align: top;">
+		<label for="node-input-useSchemaValidation" style="width: auto">Enable Schema Validation</label>
+	</div>
+
+    <!-- Schema Registry Configuration (shown only when schema validation is enabled) -->
+    <div id="node-config-schema" style="display: none;">
+        <div class="form-row">
+            <h4><i class="fa fa-cog"></i> Schema Registry Configuration</h4>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-registryUrl"><i class="fa fa-globe"></i> Registry URL </label>
+            <input type="text" id="node-input-registryUrl" placeholder="http://localhost:8081">
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-schemaSubject"><i class="fa fa-file-code-o"></i> Schema Subject </label>
+            <input type="text" id="node-input-schemaSubject" placeholder="my-topic-value">
+        </div>
+
+        <div class="form-row">
+    		<input type="checkbox" id="node-input-useRegistryAuth" style="display: inline-block; width: auto; vertical-align: top;">
+    		<label for="node-input-useRegistryAuth" style="width: auto">Use Registry Authentication</label>
+    	</div>
+
+        <div id="node-config-registry-auth" class="form-row" style="display: none;">
+            <div class="form-row">
+                <label for="node-input-registryUsername"><i class="fa fa-user"></i> Username </label>
+                <input type="text" id="node-input-registryUsername" placeholder="Username">
+            </div>
+            <div class="form-row">
+                <label for="node-input-registryPassword"><i class="fa fa-lock"></i> Password </label>
+                <input type="password" id="node-input-registryPassword" placeholder="Password">
+            </div>
+        </div>
     </div>
 
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('hm-kafka-consumer',{
+    RED.nodes.registerType('hm-kafka-consumer', {
         category: 'IOT',
         paletteLabel: "Kafka Receive",
-        color: '#A5D6A7',
+        color: '#CE93D8',
         defaults: {
-            name: {required:false},
-            broker: {type:"hm-kafka-broker"},
-            outOfRangeOffset: {value:"earliest"},
-            fromOffset: {value:"latest"},
-            topic: {required:true},
-            groupid: {required:false},
-            encoding: {value: "utf8"}
+            name: { required: false },
+            broker: { type: "hm-kafka-broker" },
+            topic: { required: true },
+            groupid: { required: false },
+            fromOffset: { value: "latest" },
+            outOfRangeOffset: { value: "latest" },
+            encoding: { value: "utf8" },
+            minbytes: { value: 1 },
+            maxbytes: { value: 1048576 },
+            // Schema Validation
+            useSchemaValidation: { value: false },
+            // Schema Registry Configuration
+            registryUrl: { required: false, value: "http://localhost:8081" },
+            schemaSubject: { required: false },
+            useRegistryAuth: { value: false },
+            registryUsername: { required: false },
+            registryPassword: { required: false }
         },
-        inputs:0,
-        outputs:1,
-        align: "left",
-        icon: "publish.png",
-        label: function() {
+        inputs: 0,
+        outputs: 1,
+        icon: "file.png",
+        label: function () {
             return this.name || "Kafka Receive";
         },
-        labelStyle: function() {
-            return "node_label_italic";
-        },
         oneditprepare: function() {
+            // Show/hide schema validation fields
+            $("#node-input-useSchemaValidation").change(function() {
+                if ($(this).is(":checked")) {
+                    $("#node-config-schema").show();
+                } else {
+                    $("#node-config-schema").hide();
+                }
+            });
 
-        },
-        oneditsave: function() {
+            // Show/hide registry auth fields
+            $("#node-input-useRegistryAuth").change(function() {
+                if ($(this).is(":checked")) {
+                    $("#node-config-registry-auth").show();
+                } else {
+                    $("#node-config-registry-auth").hide();
+                }
+            });
 
-        },
-        oneditresize: function(size) {
-
+            // Initialize visibility based on current values
+            if (this.useSchemaValidation) {
+                $("#node-config-schema").show();
+            }
+            if (this.useRegistryAuth) {
+                $("#node-config-registry-auth").show();
+            }
         }
     });
 </script>

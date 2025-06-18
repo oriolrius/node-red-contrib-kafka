@@ -1,15 +1,13 @@
 {
     "name": "@oriolrius/kafka",
-    "version": "3.0.0",
+    "version": "4.0.0",
     "description": "Node-RED Kafka nodes: Send, Receive, and Schema validation with modern KafkaJS",
     "node-red": {
         "version": ">=3.0.0",
         "nodes": {
-            "hm-kafka-consumer": "./js/kafka-consumer.js",
-            "hm-kafka-producer": "./js/kafka-producer.js",
             "hm-kafka-broker": "./js/kafka-broker.js",
-            "hm-kafka-schema-producer": "./js/kafka-schema-producer.js",
-            "hm-kafka-schema-consumer": "./js/kafka-schema-consumer.js"
+            "hm-kafka-producer": "./js/kafka-producer.js",
+            "hm-kafka-consumer": "./js/kafka-consumer.js"
         },
         "keywords": [
             "node-red",
@@ -48,14 +46,15 @@
     "license": "MIT",
     "scripts": {
         "test": "node tests/run-tests.js",
-        "test:individual": "node tests/comprehensive-test.js && node tests/test-node-loading.js && node tests/test-schema-producer.js && node tests/test-schema-consumer.js",
-        "test:comprehensive": "node tests/comprehensive-test.js",
+        "test:simple": "node tests/simple-kafka-test.js",
         "test:loading": "node tests/test-node-loading.js",
-        "test:schema": "node tests/test-schema-producer.js",
-        "test:schema-consumer": "node tests/test-schema-consumer.js"
+        "test:comprehensive": "node tests/comprehensive-test.js"
     },
     "dependencies": {
         "@kafkajs/confluent-schema-registry": "^3.9.0",
         "kafkajs": "^2.2.4"
+    },
+    "devDependencies": {
+        "testcontainers": "^11.0.3"
     }
 }

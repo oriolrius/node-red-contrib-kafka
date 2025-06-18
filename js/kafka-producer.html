@@ -1,6 +1,7 @@
 <script type="text/html" data-help-name="hm-kafka-producer">
     <p>Send messages to a Kafka topic.</p>
     <p>This node publishes the incoming message payload to the specified Kafka topic.</p>
+    <p>Optionally validates message payloads against registered Avro schemas using Confluent Schema Registry.</p>
     <p>Supports message compression, acknowledgment settings, and IoT cloud data formatting.</p>
     <p>On successful send, the node status shows "Sending". On failure, shows "Error".</p>
 </script>
@@ -40,157 +41,270 @@
          	<option value="2">Compress using snappy</option>
          </select>
     </div>
+
+    <!-- Schema Validation Section -->
+    <hr/>
+    <div class="form-row">
+		<input type="checkbox" id="node-input-useSchemaValidation" style="display: inline-block; width: auto; vertical-align: top;">
+		<label for="node-input-useSchemaValidation" style="width: auto">Enable Schema Validation</label>
+	</div>
+
+    <!-- Schema Registry Configuration (shown only when schema validation is enabled) -->
+    <div id="node-config-schema" style="display: none;">
+        <div class="form-row">
+            <h4><i class="fa fa-cog"></i> Schema Registry Configuration</h4>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-registryUrl"><i class="fa fa-globe"></i> Registry URL </label>
+            <input type="text" id="node-input-registryUrl" placeholder="http://localhost:8081">
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-schemaSubject"><i class="fa fa-file-code-o"></i> Schema Subject </label>
+            <input type="text" id="node-input-schemaSubject" placeholder="my-topic-value">
+        </div>
+
+        <div class="form-row">
+    		<input type="checkbox" id="node-input-useRegistryAuth" style="display: inline-block; width: auto; vertical-align: top;">
+    		<label for="node-input-useRegistryAuth" style="width: auto">Use Registry Authentication</label>
+    	</div>
+
+        <div id="node-config-registry-auth" class="form-row" style="display: none;">
+            <div class="form-row">
+                <label for="node-input-registryUsername"><i class="fa fa-user"></i> Username </label>
+                <input type="text" id="node-input-registryUsername" placeholder="Username">
+            </div>
+            <div class="form-row">
+                <label for="node-input-registryPassword"><i class="fa fa-lock"></i> Password </label>
+                <input type="password" id="node-input-registryPassword" placeholder="Password">
+            </div>
+        </div>
+
+        <div class="form-row">
+    		<input type="checkbox" id="node-input-autoRegister" style="display: inline-block; width: auto; vertical-align: top;">
+    		<label for="node-input-autoRegister" style="width: auto">Auto-register schema if not found</label>
+    	</div>
+
+        <div id="node-config-auto-schema" class="form-row" style="display: none;">
+            <div class="form-row">
+                <label for="node-input-autoSchema"><i class="fa fa-code"></i> Default Schema (JSON) </label>
+                <textarea id="node-input-autoSchema" rows="8" placeholder='{"type": "record", "name": "Message", "fields": [{"name": "id", "type": "string"}, {"name": "message", "type": "string"}]}'></textarea>
+            </div>
+        </div>
+
+        <div class="form-row">
+    		<input type="checkbox" id="node-input-validateOnly" style="display: inline-block; width: auto; vertical-align: top;">
+    		<label for="node-input-validateOnly" style="width: auto">Validate schema only (don't publish)</label>
+    	</div>
+    </div>
+
+    <!-- IoT Configuration Section -->
+    <hr/>
     <div class="form-row">
 		<input type="checkbox" id="node-input-useiot" style="display: inline-block; width: auto; vertical-align: top;">
 		<label for="node-input-useiot" style="width: auto">Cloud Configuration</label>
 	</div>
 	<!-- iot Cloud Configuration -->
-	<div id="node-config-iot" class="form-row">
+	<div id="node-config-iot" class="form-row" style="display: none;">
 		<hr/>
 		<!-- Object Model -->
 		<div class="form-row">
-			<label for="node-input-model"><i class="fa fa-tree"></i> <span>Model</span></label>
-			<select type="text" id="node-input-model" style="width:70%;">
-				<option value="use">- Use msg.model to set -</option>
+			<label for="node-input-model"><i class="fa fa-cogs"></i> Model </label>
+			<select id="node-input-model">
+				<option value="use">Obtain the model from the broker</option>
+				<option value="iot">Create your own model</option>
 			</select>
-			<!-- <input  id="node-input-model" type="text" placeholder="Enter model id" > -->
 		</div>
-		<!-- Device Instance -->
+		<!-- Device Code -->
 		<div class="form-row">
-			<label for="node-input-device"><i class="fa fa-laptop"></i> <span>Device</span></label>
-			<select type="text" id="node-input-device" style="width:70%;">
-				<option value="use">- Use msg.device to set -</option>
+			<label for="node-input-device"><i class="fa fa-microchip"></i> Device </label>
+			<select id="node-input-device">
+				<option value="use">Obtain the device from the broker</option>
+				<option value="iot">Create your own device</option>
 			</select>
 		</div>
+		<!-- Type -->
 		<div class="form-row">
-			<label for="node-input-iotType"><i class="fa fa-tasks"></i> <span>Type</span></label>
-			<!-- Report types: properties: props, events: event, services: service -->
-			<select type="text" id="node-input-iotType" style="width:70%;">
-				<option value="props">Properties</option>
-				<option value="event">Event</option>
-				<option value="service">Service</option>
-				<option value="use">- Use msg.iotType to set -</option>
+			<label for="node-input-iotType"><i class="fa fa-list"></i> Type </label>
+			<select id="node-input-iotType">
+				<option value="props">Props</option>
+				<option value="events">Events</option>
 			</select>
 		</div>
-		<div class="form-row" style="margin-bottom:0;">
-			<label><i class="fa fa-list"></i> <span>Field Structure</span></label>
-		</div>
-		<div class="form-row node-input-iot-container-row">
-			<ol id="node-input-iot-container"></ol>
+		<!-- Fields -->
+		<div class="form-row">
+			<label for="node-input-fields"><i class="fa fa-list"></i> Fields </label>
+			<ol id="node-input-fields-container"></ol>
 		</div>
 	</div>
+
 </script>
 
 <script type="text/javascript">
     RED.nodes.registerType('hm-kafka-producer', {
         category: 'IOT',
         paletteLabel: "Kafka Send",
-        color: '#FFCC80',
+        color: '#CE93D8',
         defaults: {
             name: { required: false },
             broker: { type: "hm-kafka-broker" },
             topic: { required: true },
             requireAcks: { value: 1, required: true },
             ackTimeoutMs: { value: 100, required: true },
-            attributes: { value: 0, required: true },
-            // edgeflow to iot config
+            attributes: { value: 0 },
+            // Schema Validation
+            useSchemaValidation: { value: false },
+            // Schema Registry Configuration
+            registryUrl: { required: false, value: "http://localhost:8081" },
+            schemaSubject: { required: false },
+            useRegistryAuth: { value: false },
+            registryUsername: { required: false },
+            registryPassword: { required: false },
+            autoRegister: { value: false },
+            autoSchema: { required: false, value: '{"type": "record", "name": "Message", "fields": [{"name": "id", "type": "string"}, {"name": "message", "type": "string"}, {"name": "timestamp", "type": "long"}]}' },
+            validateOnly: { value: false },
+            // IoT Configuration
             useiot: { value: false },
-            model: { required: false, value: "" },
-            device: { required: false, value: "" },
-            iotType: { required: false, value: "props" },
-            fields: { required: false, value: [] },
+            model: { value: "use" },
+            device: { value: "use" },
+            iotType: { value: "props" },
+            fields: { value: [] }
         },
         inputs: 1,
-        inputLabels: "",
-        outputs: 0,
-        outputLabels: [],
-        icon: "publish.png",
-        allign: "right",
+        outputs: 1,
+        icon: "file.png",
         label: function () {
             return this.name || "Kafka Send";
         },
-        labelStyle: function () {
-            return "node_label_italic";
-        },
-        oneditprepare: function () {
-            const node = this;
-            function checkIot() {
-                if (!$("#node-input-useiot").is(':checked')) {
+        oneditprepare: function() {
+            var node = this;
+            
+            // Show/hide schema validation fields
+            $("#node-input-useSchemaValidation").change(function() {
+                if ($(this).is(":checked")) {
+                    $("#node-config-schema").show();
+                } else {
+                    $("#node-config-schema").hide();
+                }
+            });
+
+            // Show/hide registry auth fields
+            $("#node-input-useRegistryAuth").change(function() {
+                if ($(this).is(":checked")) {
+                    $("#node-config-registry-auth").show();
+                } else {
+                    $("#node-config-registry-auth").hide();
+                }
+            });
+
+            // Show/hide auto schema registration fields
+            $("#node-input-autoRegister").change(function() {
+                if ($(this).is(":checked")) {
+                    $("#node-config-auto-schema").show();
+                } else {
+                    $("#node-config-auto-schema").hide();
+                }
+            });
+
+            // Show/hide IoT configuration
+            $("#node-input-useiot").change(function() {
+                if ($(this).is(":checked")) {
+                    $("#node-config-iot").show();
+                } else {
                     $("#node-config-iot").hide();
                 }
-                else {
-                    $("#node-config-iot").show();
-                }
-            }
-            // edgeflow to iot config
-
-            checkIot();
-
-            $("#node-input-useiot").click(function () {
-                checkIot();
             });
 
-            const headerList = $("#node-input-iot-container").css('min-height', '360px').css('min-width', '430px').editableList({
-                addItem: function (container, i, item) {
-                    const row = $('<div/>').css({
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap',
-                        display: 'flex'
-                    }).appendTo(container);
-                    const propertNameCell = $('<div/>').css({ 'flex-grow': 1 }).appendTo(row);
-                    const propertyName = $('<input/>', { class: "node-input-key-name", type: "text", style: "width: 100%" })
-                        .appendTo(propertNameCell)
-                        .typedInput({ types: ['str'] });
-
-                    const propertyValueCell = $('<div/>').css({ 'flex-grow': 1, 'margin-left': '10px' }).appendTo(row);
-                    const propertyValue = $(`<select class= "node-input-key-value">${optionHtml}</select>`, { style: "width: 100%" })
-                        .appendTo(propertyValueCell)
-
-                    const setup = function (_header) {
-                        const { fieldName, dataType = 'TEXT' } = item;
-                        propertyName.typedInput('value', fieldName);
-                        propertyValue.val(dataType);
-                    }
-                    setup(item);
-
-                },
-                sortable: true,
-                removable: true
-            });
-            if (node.fields) {
-                for (let index = 0; index < node.fields.length; index++) {
-                    const element = node.fields[index];
-                    headerList.editableList('addItem', node.fields[index]);
-                }
+            // Initialize visibility based on current values
+            if (this.useSchemaValidation) {
+                $("#node-config-schema").show();
             }
+            if (this.useRegistryAuth) {
+                $("#node-config-registry-auth").show();
+            }
+            if (this.autoRegister) {
+                $("#node-config-auto-schema").show();
+            }
+            if (this.useiot) {
+                $("#node-config-iot").show();
+            }
+
+            // IoT Fields configuration
+            function generateField(i, field) {
+                var container = $('<li/>', { style: "background: #fff; margin:0; padding:8px 0px; border-bottom: 1px solid #ccc;" });
+                var row = $('<div/>').appendTo(container);
+                var row2 = $('<div/>', { style: "padding-top: 5px;" }).appendTo(container);
+
+                $('<i style="color: #eee; cursor: move; margin-right: 3px;" class="fa fa-bars"></i>').appendTo(row);
+
+                var fieldName = $('<input/>', {
+                    class: "node-input-field-name",
+                    type: "text",
+                    style: "margin-left: 5px; width: 200px;",
+                    placeholder: "Field Name"
+                }).appendTo(row).val(field.fieldName);
+
+                var dataType = $('<select/>', {
+                    class: "node-input-field-type",
+                    style: "margin-left: 10px; width: 100px;"
+                }).appendTo(row);
+
+                dataType.append('<option value="TEXT">TEXT</option>');
+                dataType.append('<option value="INT32">INT32</option>');
+                dataType.append('<option value="FLOAT">FLOAT</option>');
+                dataType.append('<option value="BOOLEAN">BOOLEAN</option>');
+                dataType.val(field.dataType);
+
+                var finalspan = $('<span/>', { style: "float: right; margin-right: 8px;" }).appendTo(row);
+                var deleteButton = $('<a/>', {
+                    href: "#",
+                    class: "editor-button editor-button-small",
+                    style: "margin-top: 7px; margin-left: 5px;"
+                }).appendTo(finalspan);
+                $('<i/>', { class: "fa fa-remove" }).appendTo(deleteButton);
+
+                deleteButton.click(function() {
+                    container.fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                });
+
+                $("#node-input-fields-container").append(container);
+            }
+
+            // Add existing fields
+            for (var i = 0; i < this.fields.length; i++) {
+                generateField(i + 1, this.fields[i]);
+            }
+
+            // Add field button
+            $('<a href="#" class="editor-button" id="node-input-field-add" style="margin-top: 4px;"><i class="fa fa-plus"></i> Add Field</a>')
+                .appendTo($("#node-input-fields-container").parent())
+                .click(function() {
+                    generateField($("#node-input-fields-container").children().length + 1, { fieldName: "", dataType: "TEXT" });
+                });
+
+            // Make fields sortable
+            $("#node-input-fields-container").sortable({
+                axis: "y",
+                handle: ".fa-bars",
+                cursor: "move"
+            });
         },
-        oneditsave: function () {
-            const fields = $("#node-input-iot-container").editableList('items');
-            const node = this;
-            node.fields = [];
-            fields.each(function (i) {
-                const item = $(this);
-                const fieldName = item.find(".node-input-key-name").val();
-                const dataType = item.find(".node-input-key-value").find(":selected").val();
-                console.log(fieldName, dataType)
-                node.fields.push({
-                    fieldName, dataType
-                })
-            });
-        },
-        oneditresize: function (size) {
-            const dlg = $("#dialog-form");
-            const expandRow = dlg.find('.node-input-iot-container-row');
-            let height = dlg.height() - 300;
-            if (expandRow && expandRow.length) {
-                const siblingRows = dlg.find('> .form-row:not(.node-input-iot-container-row)');
-                for (let i = 0; i < siblingRows.size(); i++) {
-                    const cr = $(siblingRows[i]);
-                    if (cr.is(":visible"))
-                        height -= cr.outerHeight(true);
+        oneditsave: function() {
+            var fields = [];
+            $("#node-input-fields-container").children().each(function(i) {
+                var fieldName = $(this).find(".node-input-field-name").val();
+                var dataType = $(this).find(".node-input-field-type").val();
+                if (fieldName !== "") {
+                    fields.push({
+                        fieldName: fieldName,
+                        dataType: dataType
+                    });
                 }
-                $("#node-input-iot-container").editableList('height', height);
-            }
+            });
+            this.fields = fields;
         }
     });
 </script>

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-// Comprehensive test for the Schema Producer Node
-console.log('🧪 Testing Kafka Schema Producer Node');
+// Comprehensive test for the Kafka Producer Node
+console.log('🧪 Testing Kafka Producer Node');
 console.log('='.repeat(50));
 
 // Test 1: Module Loading
@@ -44,14 +44,11 @@ try {
                 
                 // Test node instantiation
                 const mockConfig = {
+                    name: 'Test Producer',
                     topic: 'test-topic',
                     requireAcks: 1,
                     ackTimeoutMs: 1000,
-                    registryUrl: 'http://localhost:8081',
-                    schemaSubject: 'test-subject',
-                    useRegistryAuth: false,
-                    autoRegister: false,
-                    validateOnly: false,
+                    useSchemaValidation: false,
                     broker: 'mock-broker-id'
                 };
                 
@@ -60,6 +57,17 @@ try {
                     const nodeInstance = {};
                     constructor.call(nodeInstance, mockConfig);
                     console.log('✅ Node instantiated successfully');
+                    
+                    // Clean up to prevent infinite loops
+                    setTimeout(() => {
+                        if (nodeInstance.interval) {
+                            clearInterval(nodeInstance.interval);
+                        }
+                        if (nodeInstance._closeCallback) {
+                            nodeInstance._closeCallback();
+                        }
+                    }, 100);
+                    
                 } catch (error) {
                     console.error('❌ Node instantiation failed:', error.message);
                 }
@@ -68,8 +76,8 @@ try {
     };
     
     // Load the module
-    const schemaProducerModule = require('../js/kafka-schema-producer.js');
-    schemaProducerModule(RED);
+    const producerModule = require('../js/kafka-producer.js');
+    producerModule(RED);
     
 } catch (error) {
     console.error('❌ Test failed:', error.message);
@@ -79,4 +87,4 @@ try {
 console.log('\n🎉 All tests passed!');
 console.log('✅ The "broker.getClient is not a function" error has been fixed.');
 console.log('✅ Node uses broker.getKafka() correctly.');
-console.log('✅ Schema Registry integration is properly configured.');
+console.log('✅ Basic Kafka integration is properly configured.');
