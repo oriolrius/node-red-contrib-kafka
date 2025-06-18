@@ -9,7 +9,7 @@ module.exports = function (RED) {
 
         node.getOptions = function () {
             var options = {
-                clientId: 'edgeflow-kafka-client',
+                clientId: 'node-red-contrib-kafka',
                 brokers: config.hosts.split(',').map(host => host.trim())
             };
 
