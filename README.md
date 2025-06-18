@@ -1,4 +1,4 @@
-# node-red-contrib-kafka
+# @oriolrius/node-red-contrib-kafka
 
 Kafka Consumer and Producer
 
@@ -41,7 +41,7 @@ These enhanced authentication mechanisms provide better security compared to the
 
 ## Installation
 ```
-npm install node-red-contrib-kafka
+npm install @oriolrius/node-red-contrib-kafka
 ```
 
 ## Documentation
