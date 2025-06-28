@@ -27,10 +27,12 @@ This node can be used to produce and consume messages to/from Kafka. It consists
 **NEW**: The `hm-kafka-schema-producer` node adds Avro schema validation support using Confluent Schema Registry. This node:
 
 - Validates message payloads against registered Avro schemas
+- Supports both latest and specific schema versions for production stability
 - Supports automatic schema registration if schema doesn't exist
 - Provides schema-only validation mode for testing
 - Integrates with Confluent Schema Registry authentication
 - Ensures data consistency and compatibility across your Kafka ecosystem
+- **Version-aware caching**: Automatically fetches new schemas when version changes
 
 ### Kafka History Reader
 
@@ -69,16 +71,18 @@ This project includes comprehensive documentation to help you get started and un
 
 ### Getting Started
 
-- **[Schema Guide](docs/SCHEMA_GUIDE.md)** - Complete guide to using Avro schema validation with the Schema Producer node
+- **[Schema Guide](docs/SCHEMA_GUIDE.md)** - Complete guide to using Avro schema validation and version management with the Schema Producer node
 - **[Kafka History Reader Guide](docs/KAFKA_HISTORY_READER_GUIDE.md)** - Complete guide to using the Kafka History Reader for retrieving historical messages
 - **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Guide for migrating from legacy kafka-node based implementations
 - **[IoT Integration Guide](docs/IOT_INTEGRATION.md)** - Complete guide to IoT cloud configuration features
 
 ### Development & Implementation
+
 - **[Implementation Summary](docs/IMPLEMENTATION_SUMMARY.md)** - Technical overview of the project's architecture and components
 - **[Debug Guide](docs/DEBUG_GUIDE.md)** - Troubleshooting and debugging information for common issues
 
 ### Improvements & Features
+
 - **[Schema Producer Status Improvements](docs/SCHEMA_PRODUCER_STATUS_IMPROVEMENTS.md)** - Details about status reporting enhancements in the Schema Producer
 - **[Node Names Improvement](docs/NODE_NAMES_IMPROVEMENT.md)** - Information about node naming conventions and improvements
 

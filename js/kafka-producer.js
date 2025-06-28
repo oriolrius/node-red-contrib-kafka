@@ -22,6 +22,7 @@ module.exports = function (RED) {
         node.ready = false;
         node.schemaRegistry = null;
         node.cachedSchemaId = null;
+        node.cachedSchemaVersion = null;
         node.lastMessageTime = null;
         node.messageCount = 0;
 
@@ -29,7 +30,9 @@ module.exports = function (RED) {
 
         node.init = function () {
             const nodeType = config.useSchemaValidation ? 'Schema Producer' : 'Producer';
-            node.debug(`[Kafka ${nodeType}] Initializing ${nodeType.toLowerCase()} for topic: ${config.topic}`);
+            const versionInfo = config.useSchemaValidation && config.schemaVersion && config.schemaVersion.trim() !== '' 
+                ? ` (schema version: ${config.schemaVersion.trim()})` : '';
+            node.debug(`[Kafka ${nodeType}] Initializing ${nodeType.toLowerCase()} for topic: ${config.topic}${versionInfo}`);
             node.status({ fill: "yellow", shape: "ring", text: "Initializing..." });
             
             let broker = RED.nodes.getNode(config.broker);
@@ -143,25 +146,51 @@ module.exports = function (RED) {
 
         node.getOrRegisterSchema = async function() {
             try {
-                // Try to get existing schema
-                if (node.cachedSchemaId) {
-                    node.debug(`[Kafka Schema Producer] Using cached schema ID: ${node.cachedSchemaId}`);
-                    node.status({ fill: "blue", shape: "ring", text: "Using cached schema" });
+                const version = config.schemaVersion && config.schemaVersion.trim() !== '' ? config.schemaVersion.trim() : 'latest';
+                
+                // Check if we have a cached schema for the current version
+                if (node.cachedSchemaId && node.cachedSchemaVersion === version) {
+                    node.debug(`[Kafka Schema Producer] Using cached schema ID: ${node.cachedSchemaId} for version: ${version}`);
+                    node.status({ fill: "blue", shape: "ring", text: `Using cached schema v${version}` });
                     return node.cachedSchemaId;
                 }
 
+                // Cache miss or version changed - fetch schema
+                node.debug(`[Kafka Schema Producer] Cache miss or version changed. Fetching schema for version: ${version}`);
                 node.status({ fill: "blue", shape: "ring", text: "Getting schema..." });
                 try {
-                    const latestSchemaId = await node.schemaRegistry.getLatestSchemaId(config.schemaSubject);
-                    node.cachedSchemaId = latestSchemaId;
-                    node.debug(`[Kafka Schema Producer] Retrieved existing schema ID: ${latestSchemaId}`);
-                    node.status({ fill: "blue", shape: "ring", text: "Schema retrieved" });
-                    return latestSchemaId;
+                    let schemaId;
+                    
+                    if (version === 'latest') {
+                        schemaId = await node.schemaRegistry.getLatestSchemaId(config.schemaSubject);
+                        node.debug(`[Kafka Schema Producer] Retrieved latest schema ID: ${schemaId} for subject: ${config.schemaSubject}`);
+                    } else {
+                        // Get specific version
+                        const versionNumber = parseInt(version);
+                        if (isNaN(versionNumber) || versionNumber <= 0) {
+                            throw new Error(`Invalid schema version: ${version}. Must be 'latest' or a positive integer.`);
+                        }
+                        
+                        const schema = await node.schemaRegistry.getSchema(config.schemaSubject, versionNumber);
+                        schemaId = schema.id;
+                        node.debug(`[Kafka Schema Producer] Retrieved schema ID: ${schemaId} for subject: ${config.schemaSubject}, version: ${versionNumber}`);
+                    }
+                    
+                    // Cache the schema ID and version
+                    node.cachedSchemaId = schemaId;
+                    node.cachedSchemaVersion = version;
+                    node.status({ fill: "blue", shape: "ring", text: `Schema v${version} retrieved` });
+                    return schemaId;
                 } catch (error) {
                     node.debug(`[Kafka Schema Producer] Schema not found: ${error.message}`);
                     
                     // If auto-register is enabled, register the schema
                     if (config.autoRegister && config.autoSchema) {
+                        // Only allow auto-registration for 'latest' version
+                        if (version !== 'latest') {
+                            throw new Error(`Cannot auto-register schema for specific version ${version}. Auto-registration only works with 'latest' version.`);
+                        }
+                        
                         node.debug(`[Kafka Schema Producer] Auto-registering schema for subject: ${config.schemaSubject}`);
                         node.status({ fill: "blue", shape: "ring", text: "Registering schema..." });
                         
@@ -179,12 +208,14 @@ module.exports = function (RED) {
                             subject: config.schemaSubject
                         });
                         
+                        // Cache the registered schema
                         node.cachedSchemaId = registeredSchema.id;
+                        node.cachedSchemaVersion = version;
                         node.debug(`[Kafka Schema Producer] Registered new schema with ID: ${registeredSchema.id}`);
                         node.status({ fill: "blue", shape: "ring", text: "Schema registered" });
                         return registeredSchema.id;
                     } else {
-                        throw new Error(`Schema not found for subject ${config.schemaSubject} and auto-register is disabled`);
+                        throw new Error(`Schema not found for subject ${config.schemaSubject}, version ${version}, and auto-register is disabled`);
                     }
                 }
             } catch (error) {
@@ -356,6 +387,8 @@ module.exports = function (RED) {
             node.status({});
             node.lastMessageTime = null;
             node.messageCount = 0;
+            node.cachedSchemaId = null;
+            node.cachedSchemaVersion = null;
             clearInterval(node.interval);
             
             if (node.producer) {

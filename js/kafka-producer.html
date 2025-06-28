@@ -66,6 +66,11 @@
         </div>
 
         <div class="form-row">
+            <label for="node-input-schemaVersion"><i class="fa fa-code-fork"></i> Schema Version </label>
+            <input type="text" id="node-input-schemaVersion" placeholder="latest (or specific version like 1, 2, 3...)">
+        </div>
+
+        <div class="form-row">
     		<input type="checkbox" id="node-input-useRegistryAuth" style="display: inline-block; width: auto; vertical-align: top;">
     		<label for="node-input-useRegistryAuth" style="width: auto">Use Registry Authentication</label>
     	</div>
@@ -158,6 +163,7 @@
             // Schema Registry Configuration
             registryUrl: { required: false, value: "http://localhost:8081" },
             schemaSubject: { required: false },
+            schemaVersion: { required: false, value: "latest" },
             useRegistryAuth: { value: false },
             registryUsername: { required: false },
             registryPassword: { required: false },
