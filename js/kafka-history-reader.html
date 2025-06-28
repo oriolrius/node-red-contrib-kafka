@@ -1,0 +1,221 @@
+<script type="text/html" data-help-name="hm-kafka-history-reader">
+    <p>Retrieves historical messages of specific types from a Kafka topic.</p>
+    
+    <h3>Details</h3>
+    <p>This node reads historical messages from a Kafka topic and filters them by message types. 
+    It's useful for getting the last known values of specific message types before starting real-time consumption.</p>
+    
+    <p>The node creates a temporary consumer with a unique group ID to read messages without affecting 
+    your main consumer offsets.</p>
+    
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>messageTypes <span class="property-type">string</span></dt>
+        <dd>Comma-separated list of message types to search for (overrides config)</dd>
+        
+        <dt>maxMessages <span class="property-type">number</span></dt>
+        <dd>Maximum number of messages to retrieve per type (overrides config)</dd>
+        
+        <dt>fromOffset <span class="property-type">string</span></dt>
+        <dd>Where to start reading: "earliest" or "latest" (overrides config)</dd>
+        
+        <dt>timeoutMs <span class="property-type">number</span></dt>
+        <dd>Maximum time to spend reading in milliseconds (default: 30000)</dd>
+    </dl>
+    
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload.historicalMessages <span class="property-type">object</span></dt>
+        <dd>Object with message types as keys and arrays of historical messages as values</dd>
+        
+        <dt>payload.summary <span class="property-type">object</span></dt>
+        <dd>Summary information including counts and timestamps</dd>
+        
+        <dt>payload.request <span class="property-type">object</span></dt>
+        <dd>Details about the request parameters and execution</dd>
+    </dl>
+    
+    <h3>Configuration</h3>
+    <ul>
+        <li><strong>Broker</strong>: Kafka broker configuration node</li>
+        <li><strong>Topic</strong>: Kafka topic to read from</li>
+        <li><strong>Message Types</strong>: Comma-separated list of message types to filter</li>
+        <li><strong>Max Messages per Type</strong>: How many messages to keep per type (newest)</li>
+        <li><strong>From Offset</strong>: Start reading from earliest or latest available messages</li>
+        <li><strong>Schema Validation</strong>: Enable Confluent Schema Registry integration</li>
+    </ul>
+    
+    <h3>Message Type Detection</h3>
+    <p>The node looks for message type in these fields (in order):</p>
+    <ul>
+        <li><code>type</code></li>
+        <li><code>messageType</code></li>
+        <li><code>eventType</code></li>
+        <li><code>kind</code></li>
+        <li><code>msgType</code></li>
+    </ul>
+    
+    <h3>Example Usage</h3>
+    <p>Connect an inject node to trigger the historical read, then process the results before 
+    starting your real-time consumer.</p>
+</script>
+
+<script type="text/html" data-template-name="hm-kafka-history-reader">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Kafka History Reader">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-broker"><i class="fa fa-random"></i> Broker</label>
+        <input type="text" id="node-input-broker">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-topic"><i class="fa fa-tag"></i> Topic</label>
+        <input type="text" id="node-input-topic" placeholder="my-topic">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-messageTypes"><i class="fa fa-filter"></i> Message Types</label>
+        <input type="text" id="node-input-messageTypes" placeholder="sensor-data,status-update,alert">
+        <div class="form-tips">Comma-separated list of message types to search for</div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-maxMessages"><i class="fa fa-hashtag"></i> Max Messages per Type</label>
+        <input type="number" id="node-input-maxMessages" value="10" min="1" max="1000">
+        <div class="form-tips">Maximum number of messages to retrieve for each type</div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-fromOffset"><i class="fa fa-clock-o"></i> From Offset</label>
+        <select id="node-input-fromOffset">
+            <option value="earliest">Earliest (from beginning)</option>
+            <option value="latest">Latest (recent messages only)</option>
+        </select>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-encoding"><i class="fa fa-code"></i> Encoding</label>
+        <select id="node-input-encoding">
+            <option value="utf8">UTF-8</option>
+            <option value="ascii">ASCII</option>
+            <option value="base64">Base64</option>
+            <option value="hex">Hex</option>
+        </select>
+    </div>
+
+    <!-- Schema Validation Section -->
+    <hr style="margin: 20px 0;"/>
+    <div class="form-row">
+        <input type="checkbox" id="node-input-useSchemaValidation" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-useSchemaValidation" style="width: auto; margin-left: 5px;">Enable Schema Validation</label>
+    </div>
+
+    <div id="node-config-schema" style="display: none; padding-left: 20px; border-left: 3px solid #ccc; margin-left: 10px;">
+        <div class="form-row">
+            <label for="node-input-registryUrl"><i class="fa fa-globe"></i> Schema Registry URL</label>
+            <input type="text" id="node-input-registryUrl" placeholder="http://localhost:8081">
+        </div>
+        
+        <div class="form-row">
+            <input type="checkbox" id="node-input-useRegistryAuth" style="display: inline-block; width: auto; vertical-align: top;">
+            <label for="node-input-useRegistryAuth" style="width: auto; margin-left: 5px;">Use Authentication</label>
+        </div>
+
+        <div id="node-config-registry-auth" style="display: none; padding-left: 20px; border-left: 3px solid #ddd; margin-left: 10px;">
+            <div class="form-row">
+                <label for="node-input-registryUsername"><i class="fa fa-user"></i> Username</label>
+                <input type="text" id="node-input-registryUsername">
+            </div>
+            <div class="form-row">
+                <label for="node-input-registryPassword"><i class="fa fa-lock"></i> Password</label>
+                <input type="password" id="node-input-registryPassword">
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('hm-kafka-history-reader', {
+        category: 'network',
+        paletteLabel: "kafka history",
+        color: '#673AB7',
+        defaults: {
+            name: { required: false },
+            broker: { type: "hm-kafka-broker", required: true },
+            topic: { required: true },
+            messageTypes: { required: true },
+            maxMessages: { value: 10, required: true, validate: function(v) { 
+                return v > 0 && v <= 1000; 
+            }},
+            fromOffset: { value: "earliest" },
+            encoding: { value: "utf8" },
+            useSchemaValidation: { value: false },
+            registryUrl: { required: false, value: "http://localhost:8081" },
+            useRegistryAuth: { value: false },
+            registryUsername: { required: false },
+            registryPassword: { required: false }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "db.png",
+        label: function () {
+            if (this.name) {
+                return this.name;
+            }
+            const types = this.messageTypes ? this.messageTypes.split(',').length : 0;
+            return `History (${types} types)`;
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function() {
+            // Handle schema validation checkbox
+            $("#node-input-useSchemaValidation").change(function() {
+                if ($(this).is(":checked")) {
+                    $("#node-config-schema").slideDown();
+                } else {
+                    $("#node-config-schema").slideUp();
+                }
+            });
+
+            // Handle registry auth checkbox
+            $("#node-input-useRegistryAuth").change(function() {
+                if ($(this).is(":checked")) {
+                    $("#node-config-registry-auth").slideDown();
+                } else {
+                    $("#node-config-registry-auth").slideUp();
+                }
+            });
+
+            // Show/hide sections based on current values
+            if (this.useSchemaValidation) {
+                $("#node-config-schema").show();
+            }
+            if (this.useRegistryAuth) {
+                $("#node-config-registry-auth").show();
+            }
+
+            // Add validation tips
+            $("#node-input-messageTypes").on('input', function() {
+                const types = $(this).val().split(',').map(t => t.trim()).filter(t => t.length > 0);
+                const tipText = types.length > 0 ? `Will search for ${types.length} message type(s)` : 'Enter at least one message type';
+                $(this).next('.form-tips').text(tipText);
+            });
+
+            // Trigger initial validation
+            $("#node-input-messageTypes").trigger('input');
+        },
+        oneditsave: function() {
+            // Clean up message types (remove extra spaces, empty entries)
+            const types = $("#node-input-messageTypes").val()
+                .split(',')
+                .map(t => t.trim())
+                .filter(t => t.length > 0)
+                .join(',');
+            $("#node-input-messageTypes").val(types);
+        }
+    });
+</script>

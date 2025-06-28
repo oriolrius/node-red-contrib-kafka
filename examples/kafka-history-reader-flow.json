@@ -1,0 +1,245 @@
+[
+    {
+        "id": "history-reader-example",
+        "type": "tab",
+        "label": "Kafka History Reader Example",
+        "disabled": false,
+        "info": "Example flow showing how to use the Kafka History Reader node"
+    },
+    {
+        "id": "inject-trigger",
+        "type": "inject",
+        "z": "history-reader-example",
+        "name": "Trigger History Read",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "messageTypes",
+                "v": "sensor-data,device-status,alert",
+                "vt": "str"
+            },
+            {
+                "p": "maxMessages",
+                "v": "5",
+                "vt": "num"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{}",
+        "payloadType": "json",
+        "x": 160,
+        "y": 100,
+        "wires": [
+            [
+                "history-reader"
+            ]
+        ]
+    },
+    {
+        "id": "history-reader",
+        "type": "hm-kafka-history-reader",
+        "z": "history-reader-example",
+        "name": "Read IoT History",
+        "broker": "kafka-broker-config",
+        "topic": "iot-messages",
+        "messageTypes": "sensor-data,device-status",
+        "maxMessages": 10,
+        "fromOffset": "earliest",
+        "encoding": "utf8",
+        "useSchemaValidation": false,
+        "registryUrl": "http://localhost:8081",
+        "useRegistryAuth": false,
+        "registryUsername": "",
+        "registryPassword": "",
+        "x": 370,
+        "y": 100,
+        "wires": [
+            [
+                "process-history"
+            ]
+        ]
+    },
+    {
+        "id": "process-history",
+        "type": "function",
+        "z": "history-reader-example",
+        "name": "Process Historical Data",
+        "func": "// Extract historical messages from the response\nconst historicalMessages = msg.payload.historicalMessages;\nconst summary = msg.payload.summary;\n\nnode.status({text: `Found ${summary.totalMessages} messages of ${summary.totalTypes} types`});\n\n// Process each message type\nfor (const [messageType, messages] of Object.entries(historicalMessages)) {\n    node.warn(`Processing ${messages.length} messages of type: ${messageType}`);\n    \n    for (const message of messages) {\n        // Send each historical message with metadata\n        const outputMsg = {\n            payload: message.payload,\n            topic: message.topic,\n            messageType: message.messageType,\n            isHistorical: true,\n            timestamp: new Date(parseInt(message.timestamp)),\n            offset: message.offset,\n            partition: message.partition\n        };\n        \n        // Send to different outputs based on message type\n        if (messageType === 'sensor-data') {\n            node.send([outputMsg, null, null]);\n        } else if (messageType === 'device-status') {\n            node.send([null, outputMsg, null]);\n        } else {\n            node.send([null, null, outputMsg]);\n        }\n    }\n}\n\n// Send summary information\nconst summaryMsg = {\n    payload: {\n        summary: summary,\n        request: msg.payload.request\n    },\n    topic: 'history-summary'\n};\n\nnode.send([null, null, summaryMsg]);\n\nreturn null;",
+        "outputs": 3,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 580,
+        "y": 100,
+        "wires": [
+            [
+                "sensor-debug"
+            ],
+            [
+                "status-debug"
+            ],
+            [
+                "summary-debug"
+            ]
+        ]
+    },
+    {
+        "id": "sensor-debug",
+        "type": "debug",
+        "z": "history-reader-example",
+        "name": "Sensor Data",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 790,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "status-debug",
+        "type": "debug",
+        "z": "history-reader-example",
+        "name": "Device Status",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 790,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "summary-debug",
+        "type": "debug",
+        "z": "history-reader-example",
+        "name": "Summary Info",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 790,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "inject-realtime-start",
+        "type": "inject",
+        "z": "history-reader-example",
+        "name": "Start Real-time Consumer",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"action\":\"start\"}",
+        "payloadType": "json",
+        "x": 180,
+        "y": 200,
+        "wires": [
+            [
+                "realtime-consumer"
+            ]
+        ]
+    },
+    {
+        "id": "realtime-consumer",
+        "type": "hm-kafka-consumer",
+        "z": "history-reader-example",
+        "name": "Real-time IoT Consumer",
+        "broker": "kafka-broker-config",
+        "topic": "iot-messages",
+        "groupId": "nodered-realtime-group",
+        "autoCommit": true,
+        "autoCommitIntervalMs": 5000,
+        "fromBeginning": false,
+        "encoding": "utf8",
+        "useSchemaValidation": false,
+        "registryUrl": "http://localhost:8081",
+        "useRegistryAuth": false,
+        "registryUsername": "",
+        "registryPassword": "",
+        "x": 410,
+        "y": 200,
+        "wires": [
+            [
+                "realtime-process"
+            ]
+        ]
+    },
+    {
+        "id": "realtime-process",
+        "type": "function",
+        "z": "history-reader-example",
+        "name": "Process Real-time",
+        "func": "// Add timestamp and mark as real-time\nmsg.isHistorical = false;\nmsg.receivedAt = new Date();\n\nnode.status({text: `Real-time: ${msg.payload.type || 'unknown'}`});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 200,
+        "wires": [
+            [
+                "realtime-debug"
+            ]
+        ]
+    },
+    {
+        "id": "realtime-debug",
+        "type": "debug",
+        "z": "history-reader-example",
+        "name": "Real-time Messages",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 810,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "kafka-broker-config",
+        "type": "hm-kafka-broker",
+        "name": "Local Kafka",
+        "hosts": "localhost:9092",
+        "clientId": "node-red-client",
+        "connectTimeout": 10000,
+        "requestTimeout": 30000,
+        "autoConnect": true,
+        "idleConnection": 5,
+        "reconnectDelay": 10,
+        "maxReconnectDelay": 30,
+        "usetls": false,
+        "useCredentials": false
+    }
+]

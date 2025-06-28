@@ -7,13 +7,15 @@
         "nodes": {
             "hm-kafka-broker": "./js/kafka-broker.js",
             "hm-kafka-producer": "./js/kafka-producer.js",
-            "hm-kafka-consumer": "./js/kafka-consumer.js"
+            "hm-kafka-consumer": "./js/kafka-consumer.js",
+            "hm-kafka-history-reader": "./js/kafka-history-reader.js"
         },
         "keywords": [
             "node-red",
             "kafka-producer",
             "kafka-consumer",
             "kafka-broker",
+            "kafka-history",
             "kafkajs",
             "big-data",
             "node-red-contrib"

@@ -14,21 +14,40 @@ This Node-RED Kafka client is based on the original `node-red-contrib-kafka` imp
 - **Better Error Handling**: More detailed error reporting and debugging capabilities
 - **Active Maintenance**: Built on actively maintained libraries for long-term reliability
 
-This node can be used to produce and consume messages to/from Kafka. It consists of four nodes:
+This node can be used to produce and consume messages to/from Kafka. It consists of five nodes:
 
 - **Kafka Broker** (hm-kafka-broker) - Connection configuration
 - **Kafka Send** (hm-kafka-producer) - Send messages to Kafka topics  
 - **Kafka Receive** (hm-kafka-consumer) - Receive messages from Kafka topics
 - **Kafka Schema Send** (hm-kafka-schema-producer) - Send messages with Avro schema validation
+- **Kafka History Reader** (hm-kafka-history-reader) - Retrieve historical messages by type
 
 ### Schema Registry Support
 
-**NEW**: The `hm-kafka-schema-producer` node adds Avro schema validation support using  Schema Registry. This node:
+**NEW**: The `hm-kafka-schema-producer` node adds Avro schema validation support using Confluent Schema Registry. This node:
+
 - Validates message payloads against registered Avro schemas
 - Supports automatic schema registration if schema doesn't exist
 - Provides schema-only validation mode for testing
-- Integrates with  Schema Registry authentication
+- Integrates with Confluent Schema Registry authentication
 - Ensures data consistency and compatibility across your Kafka ecosystem
+
+### Kafka History Reader
+
+**NEW**: The `hm-kafka-history-reader` node allows you to retrieve historical messages of specific types from Kafka topics. This is particularly useful for:
+
+- Getting the last known values of specific message types before starting real-time consumption
+- Initializing your application state with historical data
+- Implementing catch-up mechanisms for offline periods
+- Debugging and analyzing message patterns
+
+Key features:
+
+- **Type-specific filtering**: Search for messages by type (checks `type`, `messageType`, `eventType`, `kind`, `msgType` fields)
+- **Configurable limits**: Set maximum number of messages to retrieve per type
+- **Offset control**: Start reading from earliest or latest available messages
+- **Schema Registry support**: Works with both plain JSON and Avro-encoded messages
+- **Non-destructive**: Uses temporary consumer groups to avoid affecting your main consumers
 
 ### SASL Authentication Support
 
@@ -49,7 +68,9 @@ npm install @oriolrius/node-red-contrib-kafka
 This project includes comprehensive documentation to help you get started and understand all features:
 
 ### Getting Started
+
 - **[Schema Guide](docs/SCHEMA_GUIDE.md)** - Complete guide to using Avro schema validation with the Schema Producer node
+- **[Kafka History Reader Guide](docs/KAFKA_HISTORY_READER_GUIDE.md)** - Complete guide to using the Kafka History Reader for retrieving historical messages
 - **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Guide for migrating from legacy kafka-node based implementations
 - **[IoT Integration Guide](docs/IOT_INTEGRATION.md)** - Complete guide to IoT cloud configuration features
 

@@ -66,9 +66,15 @@ try {
     const brokerModule = require('../js/kafka-broker.js');
     brokerModule(RED);
     
+    // Load the history reader module
+    console.log('Loading History Reader Node...');
+    const historyReaderModule = require('../js/kafka-history-reader.js');
+    historyReaderModule(RED);
+    
     console.log('\n🎉 All Kafka Nodes loaded successfully!');
     console.log('✅ The broker.getKafka() method fix is working correctly.');
-    
+    console.log('✅ All 4 node types registered: broker, producer, consumer, history-reader');
+
 } catch (error) {
     console.error('❌ Error loading Kafka Nodes:', error.message);
     console.error('Full error:', error);

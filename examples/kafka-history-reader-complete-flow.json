@@ -1,0 +1,197 @@
+[
+    {
+        "id": "history-reader-example",
+        "type": "tab",
+        "label": "Kafka History Reader Example",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "inject1",
+        "type": "inject",
+        "z": "history-reader-example",
+        "name": "Get Last Values",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "messageTypes",
+                "v": "temperature,humidity,status",
+                "vt": "str"
+            },
+            {
+                "p": "maxMessages",
+                "v": "5",
+                "vt": "num"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{}",
+        "payloadType": "json",
+        "x": 130,
+        "y": 100,
+        "wires": [
+            [
+                "history-reader"
+            ]
+        ]
+    },
+    {
+        "id": "history-reader",
+        "type": "hm-kafka-history-reader",
+        "z": "history-reader-example",
+        "name": "Read Sensor History",
+        "broker": "kafka-broker-config",
+        "topic": "sensor-data",
+        "messageTypes": "temperature,humidity,status",
+        "maxMessages": 10,
+        "fromOffset": "earliest",
+        "encoding": "utf8",
+        "useSchemaValidation": false,
+        "registryUrl": "http://localhost:8081",
+        "useRegistryAuth": false,
+        "registryUsername": "",
+        "registryPassword": "",
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "debug1",
+                "process-history"
+            ]
+        ]
+    },
+    {
+        "id": "debug1",
+        "type": "debug",
+        "z": "history-reader-example",
+        "name": "Historical Messages",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "process-history",
+        "type": "function",
+        "z": "history-reader-example",
+        "name": "Process History",
+        "func": "// Extract the latest values from historical messages\nconst history = msg.payload.historicalMessages;\nconst latestValues = {};\n\n// Get the most recent message for each type\nfor (const [messageType, messages] of Object.entries(history)) {\n    if (messages.length > 0) {\n        // Get the message with the highest timestamp\n        const latest = messages.reduce((prev, current) => {\n            return (parseInt(current.timestamp) > parseInt(prev.timestamp)) ? current : prev;\n        });\n        \n        latestValues[messageType] = {\n            value: latest.payload,\n            timestamp: latest.timestamp,\n            age: Date.now() - parseInt(latest.timestamp)\n        };\n    }\n}\n\n// Create output message\nmsg.payload = {\n    latestValues: latestValues,\n    summary: msg.payload.summary,\n    foundTypes: Object.keys(latestValues)\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 580,
+        "y": 140,
+        "wires": [
+            [
+                "debug2",
+                "start-consumer"
+            ]
+        ]
+    },
+    {
+        "id": "debug2",
+        "type": "debug",
+        "z": "history-reader-example",
+        "name": "Latest Values",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "start-consumer",
+        "type": "function",
+        "z": "history-reader-example",
+        "name": "Start Real-time Consumer",
+        "func": "// After getting historical values, signal to start real-time consumer\nmsg.payload = {\n    command: \"start_realtime\",\n    initialValues: msg.payload.latestValues\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 140,
+        "wires": [
+            [
+                "kafka-consumer"
+            ]
+        ]
+    },
+    {
+        "id": "kafka-consumer",
+        "type": "hm-kafka-consumer",
+        "z": "history-reader-example",
+        "name": "Real-time Consumer",
+        "broker": "kafka-broker-config",
+        "topic": "sensor-data",
+        "groupId": "nodered-consumer-group",
+        "autoCommit": true,
+        "autoCommitIntervalMs": 5000,
+        "fetchMaxWaitMs": 500,
+        "fetchMaxBytes": 1048576,
+        "fromOffset": "latest",
+        "encoding": "utf8",
+        "useSchemaValidation": false,
+        "registryUrl": "http://localhost:8081",
+        "useRegistryAuth": false,
+        "registryUsername": "",
+        "registryPassword": "",
+        "x": 1080,
+        "y": 140,
+        "wires": [
+            [
+                "debug3"
+            ]
+        ]
+    },
+    {
+        "id": "debug3",
+        "type": "debug",
+        "z": "history-reader-example",
+        "name": "Real-time Messages",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1300,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "kafka-broker-config",
+        "type": "hm-kafka-broker",
+        "name": "Local Kafka Broker",
+        "hosts": "localhost:9092",
+        "clientId": "nodered-client",
+        "usetls": false,
+        "useCredentials": false,
+        "username": "",
+        "password": ""
+    }
+]
