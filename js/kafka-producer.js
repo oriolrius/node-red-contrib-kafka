@@ -171,8 +171,7 @@ module.exports = function (RED) {
                             throw new Error(`Invalid schema version: ${version}. Must be 'latest' or a positive integer.`);
                         }
                         
-                        const schema = await node.schemaRegistry.getSchema(config.schemaSubject, versionNumber);
-                        schemaId = schema.id;
+                        schemaId = await node.schemaRegistry.getRegistryId(config.schemaSubject, versionNumber);
                         node.debug(`[Kafka Schema Producer] Retrieved schema ID: ${schemaId} for subject: ${config.schemaSubject}, version: ${versionNumber}`);
                     }
                     
