@@ -84,27 +84,37 @@ module.exports = function(RED) {
                     groupId: consumerGroupId,
                     minBytes: 1,
                     maxBytes: 1048576,
-                    maxWaitTimeInMs: 1000
+                    maxWaitTimeInMs: 1000,
+                    retry: {
+                        initialRetryTime: 100,
+                        retries: 8
+                    }
                 });
 
                 await tempConsumer.connect();
                 node.debug(`[Kafka History Reader] Connected with group: ${consumerGroupId}`);
                 
+                // Subscribe to topic
                 await tempConsumer.subscribe({ 
                     topic: config.topic, 
                     fromBeginning: fromOffset === 'earliest'
                 });
+                
+                node.debug(`[Kafka History Reader] Subscribed to topic '${config.topic}' from ${fromOffset}`);
 
                 const foundMessages = new Map();
                 let processedCount = 0;
                 const startTime = Date.now();
                 const timeoutMs = parseInt(msg.timeoutMs || 30000); // 30 seconds default
                 let isReading = true;
+                let hasProcessedAnyMessage = false;
+                
+                node.debug(`[Kafka History Reader] Starting to read from topic '${config.topic}' with timeout ${timeoutMs}ms`);
                 
                 // Set timeout
                 const timeoutId = setTimeout(() => {
+                    node.debug(`[Kafka History Reader] Timeout reached after ${timeoutMs}ms, processed ${processedCount} messages`);
                     isReading = false;
-                    node.debug(`[Kafka History Reader] Timeout reached after ${timeoutMs}ms`);
                 }, timeoutMs);
 
                 await tempConsumer.run({
@@ -113,22 +123,29 @@ module.exports = function(RED) {
                         
                         try {
                             let decodedValue;
+                            let rawValue = message.value ? message.value.toString(encoding) : '';
+                            
+                            // Debug: Log raw message for troubleshooting
+                            node.debug(`[Kafka History Reader] Raw message value: ${rawValue.substring(0, 200)}...`);
                             
                             if (config.useSchemaValidation && node.schemaRegistry) {
                                 decodedValue = await node.schemaRegistry.decode(message.value);
                             } else {
-                                const valueStr = message.value ? message.value.toString(encoding) : '';
-                                if (valueStr) {
+                                if (rawValue) {
                                     try {
-                                        decodedValue = JSON.parse(valueStr);
+                                        decodedValue = JSON.parse(rawValue);
                                     } catch (parseError) {
+                                        node.debug(`[Kafka History Reader] JSON parse failed: ${parseError.message}, treating as plain text`);
                                         // If JSON parse fails, treat as plain text
-                                        decodedValue = { content: valueStr };
+                                        decodedValue = { content: rawValue };
                                     }
                                 } else {
                                     decodedValue = {};
                                 }
                             }
+                            
+                            // Debug: Log decoded message structure
+                            node.debug(`[Kafka History Reader] Decoded message structure: ${JSON.stringify(decodedValue, null, 2).substring(0, 300)}...`);
                             
                             // Determine message type - check multiple possible fields
                             const messageType = decodedValue.type || 
@@ -137,6 +154,9 @@ module.exports = function(RED) {
                                               decodedValue.kind ||
                                               decodedValue.msgType ||
                                               'unknown';
+                            
+                            // Debug: Log message type detection
+                            node.debug(`[Kafka History Reader] Detected message type: '${messageType}', looking for: [${messageTypes.join(', ')}]`);
                             
                             if (messageTypes.includes(messageType)) {
                                 if (!foundMessages.has(messageType)) {
@@ -167,6 +187,12 @@ module.exports = function(RED) {
                             }
                             
                             processedCount++;
+                            hasProcessedAnyMessage = true;
+                            
+                            // Log progress every 100 messages
+                            if (processedCount % 100 === 0) {
+                                node.debug(`[Kafka History Reader] Processed ${processedCount} messages so far, found ${foundMessages.size} types`);
+                            }
                             
                             // Check if we have enough messages for all types
                             let allTypesSatisfied = true;
@@ -178,7 +204,7 @@ module.exports = function(RED) {
                             }
                             
                             if (allTypesSatisfied) {
-                                node.debug(`[Kafka History Reader] All message types satisfied, stopping early`);
+                                node.debug(`[Kafka History Reader] All message types satisfied, stopping early after ${processedCount} messages`);
                                 isReading = false;
                             }
                             
@@ -189,12 +215,26 @@ module.exports = function(RED) {
                 });
 
                 // Wait for reading to complete or timeout
+                let checkCount = 0;
                 while (isReading && (Date.now() - startTime < timeoutMs)) {
                     await new Promise(resolve => setTimeout(resolve, 100));
+                    checkCount++;
+                    
+                    // Log progress every 50 checks (5 seconds)
+                    if (checkCount % 50 === 0) {
+                        const elapsed = Date.now() - startTime;
+                        node.debug(`[Kafka History Reader] Still reading... ${elapsed}ms elapsed, processed ${processedCount} messages, found ${foundMessages.size} types`);
+                    }
                 }
                 
                 clearTimeout(timeoutId);
                 isReading = false;
+                
+                // Final debug log
+                node.debug(`[Kafka History Reader] Finished reading. Processed ${processedCount} total messages, found ${foundMessages.size} matching types`);
+                if (processedCount === 0) {
+                    node.warn(`[Kafka History Reader] No messages were processed. Check if topic '${config.topic}' has messages and consumer has access.`);
+                }
                 
                 // Disconnect the temporary consumer
                 await tempConsumer.disconnect();
