@@ -1,23 +1,38 @@
 <script type="text/html" data-help-name="hm-kafka-history-reader">
-    <p>Retrieves historical messages of specific types from a Kafka topic.</p>
+    <p>Retrieves historical messages from a Kafka topic starting from a specific offset.</p>
     
     <h3>Details</h3>
-    <p>This node reads historical messages from a Kafka topic and filters them by message types. 
-    It's useful for getting the last known values of specific message types before starting real-time consumption.</p>
-    
-    <p>The node creates a temporary consumer with a unique group ID to read messages without affecting 
+    <p>This node reads historical messages from a Kafka topic starting from a specified offset position. 
+    You can read messages either forward (after the offset) or backward (before the offset). 
+    The node creates a temporary consumer with a unique group ID to read messages without affecting 
     your main consumer offsets.</p>
+    
+    <p><strong>Direction Modes:</strong></p>
+    <ul>
+        <li><strong>Forward:</strong> Reads N messages starting AFTER the specified offset</li>
+        <li><strong>Backward:</strong> Reads the last N messages that come BEFORE the specified offset</li>
+    </ul>
+    
+    <p><strong>Examples:</strong></p>
+    <ul>
+        <li><strong>Forward from offset 1300, max 3 messages:</strong><br/>
+        Result: messages at offsets 1301, 1302, 1303</li>
+        <li><strong>Backward from offset 1300, max 3 messages:</strong><br/>
+        Result: messages at offsets 1297, 1298, 1299</li>
+    </ul>
+    
+    <p><strong>Note:</strong> The offset parameter is required. The node will error if no offset is specified.</p>
     
     <h3>Inputs</h3>
     <dl class="message-properties">
-        <dt>messageTypes <span class="property-type">string</span></dt>
-        <dd>Comma-separated list of message types to search for (overrides config)</dd>
-        
         <dt>maxMessages <span class="property-type">number</span></dt>
-        <dd>Maximum number of messages to retrieve per type (overrides config)</dd>
+        <dd>Maximum number of messages to retrieve (overrides config)</dd>
         
-        <dt>fromOffset <span class="property-type">string</span></dt>
-        <dd>Where to start reading: "earliest" or "latest" (overrides config)</dd>
+        <dt>offset <span class="property-type">number</span></dt>
+        <dd>Starting offset position for reading messages (overrides config)</dd>
+        
+        <dt>direction <span class="property-type">string</span></dt>
+        <dd>Reading direction: "forward" or "backward" (overrides config)</dd>
         
         <dt>timeoutMs <span class="property-type">number</span></dt>
         <dd>Maximum time to spend reading in milliseconds (default: 30000)</dd>
@@ -25,39 +40,44 @@
     
     <h3>Outputs</h3>
     <dl class="message-properties">
-        <dt>payload.historicalMessages <span class="property-type">object</span></dt>
-        <dd>Object with message types as keys and arrays of historical messages as values</dd>
+        <dt>payload.messages <span class="property-type">array</span></dt>
+        <dd>Array of historical messages with payload, topic, offset, partition, key, timestamp, and headers</dd>
         
         <dt>payload.summary <span class="property-type">object</span></dt>
-        <dd>Summary information including counts and timestamps</dd>
+        <dd>Summary information including message count, direction, and starting offset</dd>
         
         <dt>payload.request <span class="property-type">object</span></dt>
-        <dd>Details about the request parameters and execution</dd>
+        <dd>Details about the request parameters including maxMessages, topic, direction, offset, and execution time</dd>
     </dl>
     
     <h3>Configuration</h3>
     <ul>
         <li><strong>Broker</strong>: Kafka broker configuration node</li>
         <li><strong>Topic</strong>: Kafka topic to read from</li>
-        <li><strong>Message Types</strong>: Comma-separated list of message types to filter</li>
-        <li><strong>Max Messages per Type</strong>: How many messages to keep per type (newest)</li>
-        <li><strong>From Offset</strong>: Start reading from earliest or latest available messages</li>
+        <li><strong>Max Messages</strong>: How many messages to retrieve</li>
+        <li><strong>Offset</strong>: Starting offset position (required)</li>
+        <li><strong>Direction</strong>: Forward (after offset) or Backward (before offset)</li>
         <li><strong>Schema Validation</strong>: Enable Confluent Schema Registry integration</li>
     </ul>
     
-    <h3>Message Type Detection</h3>
-    <p>The node looks for message type in these fields (in order):</p>
-    <ul>
-        <li><code>type</code></li>
-        <li><code>messageType</code></li>
-        <li><code>eventType</code></li>
-        <li><code>kind</code></li>
-        <li><code>msgType</code></li>
-    </ul>
-    
     <h3>Example Usage</h3>
-    <p>Connect an inject node to trigger the historical read, then process the results before 
-    starting your real-time consumer.</p>
+    <p><strong>Basic Forward Reading:</strong><br/>
+    Configure the node with offset=1000, direction=forward, maxMessages=5. When triggered, it will return 
+    messages at offsets 1001, 1002, 1003, 1004, 1005.</p>
+    
+    <p><strong>Basic Backward Reading:</strong><br/>
+    Configure the node with offset=1000, direction=backward, maxMessages=5. When triggered, it will return 
+    the last 5 messages before offset 1000 (e.g., offsets 995, 996, 997, 998, 999).</p>
+    
+    <p><strong>Dynamic Configuration:</strong><br/>
+    Send a message with <code>msg.offset = 2000</code>, <code>msg.direction = "forward"</code>, and 
+    <code>msg.maxMessages = 3</code> to override the node configuration dynamically.</p>
+    
+    <p><strong>With Schema Registry:</strong><br/>
+    Enable schema validation to automatically decode Avro messages using the configured schema registry.</p>
+    
+    <p>This node is perfect for getting historical context before starting real-time consumption or for 
+    debugging specific message ranges in your Kafka topics.</p>
 </script>
 
 <script type="text/html" data-template-name="hm-kafka-history-reader">
@@ -77,23 +97,24 @@
     </div>
 
     <div class="form-row">
-        <label for="node-input-messageTypes"><i class="fa fa-filter"></i> Message Types</label>
-        <input type="text" id="node-input-messageTypes" placeholder="sensor-data,status-update,alert">
-        <div class="form-tips">Comma-separated list of message types to search for</div>
-    </div>
-
-    <div class="form-row">
-        <label for="node-input-maxMessages"><i class="fa fa-hashtag"></i> Max Messages per Type</label>
+        <label for="node-input-maxMessages"><i class="fa fa-hashtag"></i> Max Messages</label>
         <input type="number" id="node-input-maxMessages" value="10" min="1" max="1000">
-        <div class="form-tips">Maximum number of messages to retrieve for each type</div>
+        <div class="form-tips">Maximum number of messages to retrieve</div>
     </div>
 
     <div class="form-row">
-        <label for="node-input-fromOffset"><i class="fa fa-clock-o"></i> From Offset</label>
-        <select id="node-input-fromOffset">
-            <option value="earliest">Earliest (from beginning)</option>
-            <option value="latest">Latest (recent messages only)</option>
+        <label for="node-input-offset"><i class="fa fa-location-arrow"></i> Offset</label>
+        <input type="number" id="node-input-offset" placeholder="Start offset (required)" min="0">
+        <div class="form-tips">Offset position to start reading from</div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-direction"><i class="fa fa-arrows-h"></i> Direction</label>
+        <select id="node-input-direction">
+            <option value="forward">Forward (read N messages after offset)</option>
+            <option value="backward">Backward (read N messages before offset)</option>
         </select>
+        <div class="form-tips">Forward: reads from offset+1 onwards. Backward: reads the last N messages before the offset.</div>
     </div>
 
     <div class="form-row">
@@ -146,11 +167,11 @@
             name: { required: false },
             broker: { type: "hm-kafka-broker", required: true },
             topic: { required: true },
-            messageTypes: { required: true },
             maxMessages: { value: 10, required: true, validate: function(v) { 
                 return v > 0 && v <= 1000; 
             }},
-            fromOffset: { value: "earliest" },
+            offset: { required: false },
+            direction: { value: "forward" },
             encoding: { value: "utf8" },
             useSchemaValidation: { value: false },
             registryUrl: { required: false, value: "http://localhost:8081" },
@@ -165,8 +186,9 @@
             if (this.name) {
                 return this.name;
             }
-            const types = this.messageTypes ? this.messageTypes.split(',').length : 0;
-            return `History (${types} types)`;
+            const dir = this.direction === 'backward' ? '←' : '→';
+            const offset = this.offset || '?';
+            return `${dir} ${this.maxMessages || 10} msgs from ${offset}`;
         },
         labelStyle: function() {
             return this.name ? "node_label_italic" : "";
@@ -197,25 +219,6 @@
             if (this.useRegistryAuth) {
                 $("#node-config-registry-auth").show();
             }
-
-            // Add validation tips
-            $("#node-input-messageTypes").on('input', function() {
-                const types = $(this).val().split(',').map(t => t.trim()).filter(t => t.length > 0);
-                const tipText = types.length > 0 ? `Will search for ${types.length} message type(s)` : 'Enter at least one message type';
-                $(this).next('.form-tips').text(tipText);
-            });
-
-            // Trigger initial validation
-            $("#node-input-messageTypes").trigger('input');
-        },
-        oneditsave: function() {
-            // Clean up message types (remove extra spaces, empty entries)
-            const types = $("#node-input-messageTypes").val()
-                .split(',')
-                .map(t => t.trim())
-                .filter(t => t.length > 0)
-                .join(',');
-            $("#node-input-messageTypes").val(types);
         }
     });
 </script>

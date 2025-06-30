@@ -132,6 +132,7 @@ Dockerfile.dev
 # Kafka/Schema Registry test files (project specific)
 test-output/
 schema-cache/
+tests-real/
 
 # Backup files
 *.backup

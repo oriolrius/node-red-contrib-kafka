@@ -50,13 +50,16 @@
         "test": "node tests/run-tests.js",
         "test:simple": "node tests/simple-kafka-test.js",
         "test:loading": "node tests/test-node-loading.js",
-        "test:comprehensive": "node tests/comprehensive-test.js"
+        "test:comprehensive": "node tests/comprehensive-test.js",
+        "test:browser": "node tests-real/launch-nodered-with-kafka.js"
     },
     "dependencies": {
         "@kafkajs/confluent-schema-registry": "^3.9.0",
         "kafkajs": "^2.2.4"
     },
     "devDependencies": {
+        "express": "^5.1.0",
+        "node-red": "^4.0.9",
         "testcontainers": "^11.0.3"
     }
 }
