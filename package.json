@@ -58,6 +58,7 @@
         "kafkajs": "^2.2.4"
     },
     "devDependencies": {
+        "dotenv": "^17.0.0",
         "express": "^5.1.0",
         "node-red": "^4.0.9",
         "testcontainers": "^11.0.3"
