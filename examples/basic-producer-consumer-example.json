@@ -1,0 +1,141 @@
+[
+    {
+        "id": "example-flow",
+        "type": "tab",
+        "label": "Basic Kafka Producer & Consumer Example",
+        "disabled": false,
+        "info": "# Basic Kafka Producer & Consumer Example\n\nThis example demonstrates the simplest use case:\n- Send messages to a Kafka topic\n- Receive messages from the same topic\n\n## Setup\n\n1. Configure the broker node with your Kafka server details\n2. Set the topic name (default: test-topic)\n3. Deploy the flow\n4. Click the inject node to send test messages\n\n## What it does\n\n- The inject node sends a test message every second\n- The producer sends it to Kafka\n- The consumer receives it and displays it in debug\n\n## Configuration\n\n- No schema validation\n- No compression\n- Simple JSON messages\n- Auto-generated consumer group ID"
+    },
+    {
+        "id": "inject-node",
+        "type": "inject",
+        "z": "example-flow",
+        "name": "Send test message",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"message\":\"Hello from Node-RED!\",\"timestamp\":$now()}",
+        "payloadType": "jsonata",
+        "x": 150,
+        "y": 100,
+        "wires": [
+            [
+                "producer-node"
+            ]
+        ]
+    },
+    {
+        "id": "producer-node",
+        "type": "oriolrius-kafka-producer",
+        "z": "example-flow",
+        "name": "Send to Kafka",
+        "broker": "broker-node",
+        "topic": "test-topic",
+        "requireAcks": 1,
+        "ackTimeoutMs": 1000,
+        "attributes": 0,
+        "useSchemaValidation": false,
+        "validateOnly": false,
+        "useiot": false,
+        "x": 360,
+        "y": 100,
+        "wires": [
+            [
+                "debug-sent"
+            ]
+        ]
+    },
+    {
+        "id": "debug-sent",
+        "type": "debug",
+        "z": "example-flow",
+        "name": "Message sent",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "consumer-node",
+        "type": "oriolrius-kafka-consumer",
+        "z": "example-flow",
+        "name": "Receive from Kafka",
+        "broker": "broker-node",
+        "topic": "test-topic",
+        "groupid": "",
+        "fromOffset": "latest",
+        "outOfRangeOffset": "latest",
+        "encoding": "utf8",
+        "useSchemaValidation": false,
+        "x": 180,
+        "y": 200,
+        "wires": [
+            [
+                "debug-received"
+            ]
+        ]
+    },
+    {
+        "id": "debug-received",
+        "type": "debug",
+        "z": "example-flow",
+        "name": "Message received",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 420,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "comment-producer",
+        "type": "comment",
+        "z": "example-flow",
+        "name": "Producer: Send messages to Kafka",
+        "info": "",
+        "x": 200,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "comment-consumer",
+        "type": "comment",
+        "z": "example-flow",
+        "name": "Consumer: Receive messages from Kafka",
+        "info": "",
+        "x": 220,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "broker-node",
+        "type": "oriolrius-kafka-broker",
+        "name": "Local Kafka",
+        "hosts": "localhost:9092",
+        "usesasl": false,
+        "saslmechanism": "plain",
+        "usetls": false,
+        "selfsign": false,
+        "useiot": false,
+        "iotType": "props"
+    }
+]

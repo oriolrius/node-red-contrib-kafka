@@ -1,0 +1,267 @@
+[
+    {
+        "id": "compression-flow",
+        "type": "tab",
+        "label": "Kafka Compression Example",
+        "disabled": false,
+        "info": "# Kafka Compression Example\n\nThis example demonstrates using different compression types:\n- GZIP compression\n- Snappy compression\n- LZ4 compression\n\n## Setup\n\n1. Configure the broker node with your Kafka server details\n2. Deploy the flow\n3. Click any inject node to send compressed messages\n\n## What it does\n\n- Three producers send the same message with different compression\n- One consumer receives all messages (automatically decompresses)\n- Debug nodes show the results\n\n## Compression Types\n\n- **GZIP**: Good compression ratio, higher CPU usage\n- **Snappy**: Fast compression, moderate ratio\n- **LZ4**: Fastest compression, good for high-throughput\n\n## Note\n\nThe consumer automatically detects and decompresses messages regardless of compression type used by the producer."
+    },
+    {
+        "id": "inject-gzip",
+        "type": "inject",
+        "z": "compression-flow",
+        "name": "Send with GZIP",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"compression\":\"GZIP\",\"data\":\"This message is compressed with GZIP. \".repeat(10),\"timestamp\":$now()}",
+        "payloadType": "jsonata",
+        "x": 140,
+        "y": 100,
+        "wires": [
+            [
+                "producer-gzip"
+            ]
+        ]
+    },
+    {
+        "id": "producer-gzip",
+        "type": "oriolrius-kafka-producer",
+        "z": "compression-flow",
+        "name": "GZIP Producer",
+        "broker": "compression-broker",
+        "topic": "compression-test",
+        "requireAcks": 1,
+        "ackTimeoutMs": 1000,
+        "attributes": 1,
+        "useSchemaValidation": false,
+        "validateOnly": false,
+        "useiot": false,
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "debug-gzip"
+            ]
+        ]
+    },
+    {
+        "id": "debug-gzip",
+        "type": "debug",
+        "z": "compression-flow",
+        "name": "GZIP sent",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 540,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "inject-snappy",
+        "type": "inject",
+        "z": "compression-flow",
+        "name": "Send with Snappy",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"compression\":\"Snappy\",\"data\":\"This message is compressed with Snappy. \".repeat(10),\"timestamp\":$now()}",
+        "payloadType": "jsonata",
+        "x": 150,
+        "y": 160,
+        "wires": [
+            [
+                "producer-snappy"
+            ]
+        ]
+    },
+    {
+        "id": "producer-snappy",
+        "type": "oriolrius-kafka-producer",
+        "z": "compression-flow",
+        "name": "Snappy Producer",
+        "broker": "compression-broker",
+        "topic": "compression-test",
+        "requireAcks": 1,
+        "ackTimeoutMs": 1000,
+        "attributes": 2,
+        "useSchemaValidation": false,
+        "validateOnly": false,
+        "useiot": false,
+        "x": 360,
+        "y": 160,
+        "wires": [
+            [
+                "debug-snappy"
+            ]
+        ]
+    },
+    {
+        "id": "debug-snappy",
+        "type": "debug",
+        "z": "compression-flow",
+        "name": "Snappy sent",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 560,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "inject-lz4",
+        "type": "inject",
+        "z": "compression-flow",
+        "name": "Send with LZ4",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"compression\":\"LZ4\",\"data\":\"This message is compressed with LZ4. \".repeat(10),\"timestamp\":$now()}",
+        "payloadType": "jsonata",
+        "x": 140,
+        "y": 220,
+        "wires": [
+            [
+                "producer-lz4"
+            ]
+        ]
+    },
+    {
+        "id": "producer-lz4",
+        "type": "oriolrius-kafka-producer",
+        "z": "compression-flow",
+        "name": "LZ4 Producer",
+        "broker": "compression-broker",
+        "topic": "compression-test",
+        "requireAcks": 1,
+        "ackTimeoutMs": 1000,
+        "attributes": 3,
+        "useSchemaValidation": false,
+        "validateOnly": false,
+        "useiot": false,
+        "x": 340,
+        "y": 220,
+        "wires": [
+            [
+                "debug-lz4"
+            ]
+        ]
+    },
+    {
+        "id": "debug-lz4",
+        "type": "debug",
+        "z": "compression-flow",
+        "name": "LZ4 sent",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 530,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "consumer-compressed",
+        "type": "oriolrius-kafka-consumer",
+        "z": "compression-flow",
+        "name": "Receive All (Auto-decompress)",
+        "broker": "compression-broker",
+        "topic": "compression-test",
+        "groupid": "compression-example",
+        "fromOffset": "latest",
+        "outOfRangeOffset": "latest",
+        "encoding": "utf8",
+        "useSchemaValidation": false,
+        "x": 210,
+        "y": 320,
+        "wires": [
+            [
+                "debug-received"
+            ]
+        ]
+    },
+    {
+        "id": "debug-received",
+        "type": "debug",
+        "z": "compression-flow",
+        "name": "Decompressed message",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 480,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "comment-producers",
+        "type": "comment",
+        "z": "compression-flow",
+        "name": "Producers: Send messages with different compression types",
+        "info": "",
+        "x": 280,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "comment-consumer",
+        "type": "comment",
+        "z": "compression-flow",
+        "name": "Consumer: Automatically decompresses all message types",
+        "info": "",
+        "x": 270,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "compression-broker",
+        "type": "oriolrius-kafka-broker",
+        "name": "Local Kafka",
+        "hosts": "localhost:9092",
+        "usesasl": false,
+        "saslmechanism": "plain",
+        "usetls": false,
+        "selfsign": false,
+        "useiot": false,
+        "iotType": "props"
+    }
+]
