@@ -1,103 +1,131 @@
-{
-  "id": "example-schema-flow",
-  "label": "Example: Kafka Schema Send",
-  "nodes": [
+[
     {
-      "id": "inject-test",
-      "type": "inject",
-      "z": "example-flow",
-      "name": "Send Test Message",
-      "props": [
-        {
-          "p": "payload",
-          "v": "{\"id\":\"sensor-001\",\"message\":\"Temperature reading\",\"timestamp\":1640995200000}",
-          "vt": "json"
-        }
-      ],
-      "repeat": "",
-      "crontab": "",
-      "once": false,
-      "onceDelay": 0.1,
-      "topic": "",
-      "x": 140,
-      "y": 100,
-      "wires": [["schema-producer"]]
+        "id": "example-schema-flow",
+        "type": "tab",
+        "label": "Kafka Schema Producer Example",
+        "disabled": false,
+        "info": "# Kafka Schema Producer Example\n\nThis example demonstrates schema validation using Confluent Schema Registry:\n- Producer validates messages against Avro schema\n- Auto-registers schema if needed\n- Shows success and error outputs\n\n## Setup\n\n1. Start Schema Registry (http://localhost:8081)\n2. Configure broker node with your Kafka details\n3. Deploy the flow\n4. Click inject to send a test message\n\n## What it does\n\n- Validates message against Avro schema\n- Automatically registers schema if not found\n- Sends validated message to Kafka\n- Shows success or validation errors\n\n## Schema\n\nThe example uses a SensorData schema with:\n- id: string (required)\n- message: string (required)\n- timestamp: long (required)\n- value: float (optional)"
     },
     {
-      "id": "schema-producer",
-      "type": "oriolrius-kafka-producer",
-      "z": "example-flow",
-      "name": "Kafka Schema Send",
-      "broker": "kafka-broker",
-      "topic": "sensor-data",
-      "requireAcks": 1,
-      "ackTimeoutMs": 1000,
-      "registryUrl": "http://localhost:8081",
-      "schemaSubject": "sensor-data-value",
-      "useRegistryAuth": false,
-      "registryUsername": "",
-      "registryPassword": "",
-      "autoRegister": true,
-      "autoSchema": "{\"type\":\"record\",\"name\":\"SensorData\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"value\",\"type\":[\"null\",\"float\"],\"default\":null}]}",
-      "validateOnly": false,
-      "x": 360,
-      "y": 100,
-      "wires": [["debug-success"], ["debug-error"]]
+        "id": "inject-test",
+        "type": "inject",
+        "z": "example-schema-flow",
+        "name": "Send Test Message",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"id\":\"sensor-001\",\"message\":\"Temperature reading\",\"timestamp\":1640995200000}",
+        "payloadType": "json",
+        "x": 140,
+        "y": 100,
+        "wires": [
+            [
+                "schema-producer"
+            ]
+        ]
     },
     {
-      "id": "debug-success",
-      "type": "debug",
-      "z": "example-flow",
-      "name": "Success",
-      "active": true,
-      "tosidebar": true,
-      "console": false,
-      "tostatus": false,
-      "complete": "payload",
-      "targetType": "msg",
-      "statusVal": "",
-      "statusType": "auto",
-      "x": 580,
-      "y": 80,
-      "wires": []
+        "id": "schema-producer",
+        "type": "oriolrius-kafka-producer",
+        "z": "example-schema-flow",
+        "name": "Kafka Schema Send",
+        "broker": "kafka-broker",
+        "topic": "sensor-data",
+        "requireAcks": 1,
+        "ackTimeoutMs": 1000,
+        "attributes": 0,
+        "useSchemaValidation": true,
+        "registryUrl": "http://localhost:8081",
+        "schemaSubject": "sensor-data-value",
+        "schemaVersion": "latest",
+        "useRegistryAuth": false,
+        "registryUsername": "",
+        "registryPassword": "",
+        "autoRegister": true,
+        "autoSchema": "{\"type\":\"record\",\"name\":\"SensorData\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"value\",\"type\":[\"null\",\"float\"],\"default\":null}]}",
+        "validateOnly": false,
+        "useiot": false,
+        "x": 360,
+        "y": 100,
+        "wires": [
+            [
+                "debug-success"
+            ],
+            [
+                "debug-error"
+            ]
+        ]
     },
     {
-      "id": "debug-error",
-      "type": "debug",
-      "z": "example-flow",
-      "name": "Error",
-      "active": true,
-      "tosidebar": true,
-      "console": false,
-      "tostatus": false,
-      "complete": "payload",
-      "targetType": "msg",
-      "statusVal": "",
-      "statusType": "auto",
-      "x": 570,
-      "y": 120,
-      "wires": []
+        "id": "debug-success",
+        "type": "debug",
+        "z": "example-schema-flow",
+        "name": "Success",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 80,
+        "wires": []
     },
     {
-      "id": "kafka-broker",
-      "type": "oriolrius-kafka-broker",
-      "name": "Local Kafka",
-      "hosts": "localhost:9092",
-      "useTLS": false,
-      "caCert": "",
-      "clientCert": "",
-      "privateKey": "",
-      "passphrase": "",
-      "selfSign": false,
-      "useSASL": false,
-      "saslMechanism": "plain",
-      "saslUsername": "",
-      "saslPassword": "",
-      "useiot": false,
-      "model": "",
-      "device": "",
-      "iotType": "props",
-      "fields": []
+        "id": "debug-error",
+        "type": "debug",
+        "z": "example-schema-flow",
+        "name": "Error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "comment-node",
+        "type": "comment",
+        "z": "example-schema-flow",
+        "name": "Schema validation with Confluent Schema Registry",
+        "info": "",
+        "x": 240,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "kafka-broker",
+        "type": "oriolrius-kafka-broker",
+        "name": "Local Kafka",
+        "hosts": "localhost:9092",
+        "usesasl": false,
+        "saslmechanism": "plain",
+        "username": "",
+        "password": "",
+        "usetls": false,
+        "cacert": "",
+        "clientcert": "",
+        "privatekey": "",
+        "passphrase": "",
+        "selfsign": false,
+        "useiot": false,
+        "model": "",
+        "device": "",
+        "iotType": "props",
+        "fields": []
     }
-  ]
-}
+]
