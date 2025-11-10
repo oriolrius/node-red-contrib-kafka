@@ -178,6 +178,8 @@ async function testCompression(compressionType, compressionName) {
         }
     };
 
+    let result = false;
+
     if (producerNode._inputCallback && producerNode.ready) {
         await producerNode._inputCallback(testMessage);
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -185,29 +187,40 @@ async function testCompression(compressionType, compressionName) {
         if (compressionType === 0) {
             if (lastCompressionUsed === null || lastCompressionUsed === undefined) {
                 console.log(`  ✅ ${compressionName}: No compression applied (as expected)`);
-                return true;
+                result = true;
             } else {
                 console.log(`  ❌ ${compressionName}: Expected no compression, got ${lastCompressionUsed}`);
-                return false;
+                result = false;
             }
         } else {
             if (lastCompressionUsed === compressionType) {
                 console.log(`  ✅ ${compressionName}: Compression type ${compressionType} applied correctly`);
-                return true;
+                result = true;
             } else {
                 console.log(`  ❌ ${compressionName}: Expected compression ${compressionType}, got ${lastCompressionUsed}`);
-                return false;
+                result = false;
             }
         }
     } else {
         console.log(`  ⚠️  ${compressionName}: Producer not ready, skipping send test`);
-        return false;
+        result = false;
     }
 
-    // Cleanup
+    // Cleanup - CRITICAL: Clear the interval to prevent hanging
     if (producerNode.interval) {
         clearInterval(producerNode.interval);
     }
+
+    // Cleanup producer connection
+    if (producerNode.producer && producerNode.producer.disconnect) {
+        try {
+            await producerNode.producer.disconnect();
+        } catch (error) {
+            // Ignore disconnect errors in tests
+        }
+    }
+
+    return result;
 }
 
 async function runCompressionTests() {
