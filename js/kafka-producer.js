@@ -1,6 +1,22 @@
 module.exports = function (RED) {
     const { SchemaRegistry } = require('@kafkajs/confluent-schema-registry');
+    const { CompressionTypes, CompressionCodecs } = require('kafkajs');
     const { getNameTypes, getMsgValues } = require('./utils');
+
+    // Register compression codecs
+    try {
+        const SnappyCodec = require('kafkajs-snappy');
+        CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec;
+    } catch (error) {
+        // Snappy codec not available
+    }
+
+    try {
+        const LZ4Codec = require('kafkajs-lz4');
+        CompressionCodecs[CompressionTypes.LZ4] = LZ4Codec;
+    } catch (error) {
+        // LZ4 codec not available
+    }
 
     function getIotOptions(config) {
         var options = new Object();
@@ -329,6 +345,12 @@ module.exports = function (RED) {
                         },
                     ],
                 };
+
+                // Apply compression if configured (attributes: 0=None, 1=GZIP, 2=Snappy, 3=LZ4)
+                if (config.attributes && config.attributes > 0) {
+                    kafkaMessage.compression = config.attributes;
+                    node.debug(`[Kafka ${nodeType}] Using compression type: ${config.attributes}`);
+                }
 
                 // Send to Kafka
                 node.status({ fill: "blue", shape: "dot", text: "Sending to Kafka" });

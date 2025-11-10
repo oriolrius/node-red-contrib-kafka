@@ -51,11 +51,15 @@
         "test:simple": "node tests/simple-kafka-test.js",
         "test:loading": "node tests/test-node-loading.js",
         "test:comprehensive": "node tests/comprehensive-test.js",
+        "test:compression": "node tests/test-compression.js",
+        "test:compression:integration": "node tests/test-compression-integration.js",
         "test:browser": "node tests-real/launch-nodered-with-kafka.js"
     },
     "dependencies": {
         "@kafkajs/confluent-schema-registry": "^3.9.0",
-        "kafkajs": "^2.2.4"
+        "kafkajs": "^2.2.4",
+        "kafkajs-lz4": "^1.2.1",
+        "kafkajs-snappy": "^1.1.0"
     },
     "devDependencies": {
         "dotenv": "^17.0.0",

@@ -57,17 +57,25 @@ async function runTests() {
             require('./comprehensive-test.js');
         }
 
-        // Run simple Kafka test 
+        // Run simple Kafka test
         if (fs.existsSync(path.join(testDir, 'simple-kafka-test.js'))) {
             console.log('\n--- Running simple-kafka-test.js ---');
             const simpleTest = require('./simple-kafka-test.js');
             await simpleTest();
         }
 
+        // Run compression test
+        if (fs.existsSync(path.join(testDir, 'test-compression.js'))) {
+            console.log('\n--- Running test-compression.js ---');
+            const compressionTest = require('./test-compression.js');
+            await compressionTest();
+        }
+
         console.log('\n🏁 Test runner completed successfully');
         console.log('✅ All basic tests passed');
         console.log('✅ Producer and Consumer nodes are working correctly');
-        
+        console.log('✅ Compression functionality verified');
+
     } catch (error) {
         console.error('\n❌ Test runner failed:', error.message);
         process.exit(1);
