@@ -25,7 +25,7 @@
     },
     {
       "id": "schema-producer",
-      "type": "hm-kafka-schema-producer",
+      "type": "oriolrius-kafka-producer",
       "z": "example-flow",
       "name": "Kafka Schema Send",
       "broker": "kafka-broker",
@@ -80,7 +80,7 @@
     },
     {
       "id": "kafka-broker",
-      "type": "hm-kafka-broker",
+      "type": "oriolrius-kafka-broker",
       "name": "Local Kafka",
       "hosts": "localhost:9092",
       "useTLS": false,

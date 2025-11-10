@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully created a new **Kafka History Reader** node (`hm-kafka-history-reader`) that allows retrieving historical messages of specific types from Kafka topics before starting real-time consumption.
+Successfully created a new **Kafka History Reader** node (`oriolrius-kafka-history-reader`) that allows retrieving historical messages of specific types from Kafka topics before starting real-time consumption.
 
 ## Files Created/Modified
 

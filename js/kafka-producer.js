@@ -429,5 +429,5 @@ module.exports = function (RED) {
         node.init();
     }
 
-    RED.nodes.registerType("hm-kafka-producer", KafkaProducerNode);
+    RED.nodes.registerType("oriolrius-kafka-producer", KafkaProducerNode);
 };

@@ -1,4 +1,4 @@
-<script type="text/html" data-help-name="hm-kafka-history-reader">
+<script type="text/html" data-help-name="oriolrius-kafka-history-reader">
     <p>Retrieves historical messages from a Kafka topic starting from a specific offset.</p>
     
     <h3>Details</h3>
@@ -80,7 +80,7 @@
     debugging specific message ranges in your Kafka topics.</p>
 </script>
 
-<script type="text/html" data-template-name="hm-kafka-history-reader">
+<script type="text/html" data-template-name="oriolrius-kafka-history-reader">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Kafka History Reader">
@@ -159,13 +159,13 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('hm-kafka-history-reader', {
+    RED.nodes.registerType('oriolrius-kafka-history-reader', {
         category: 'IOT',
         paletteLabel: "kafka history",
         color: '#673AB7',
         defaults: {
             name: { required: false },
-            broker: { type: "hm-kafka-broker", required: true },
+            broker: { type: "oriolrius-kafka-broker", required: true },
             topic: { required: true },
             maxMessages: { value: 10, required: true, validate: function(v) { 
                 return v > 0 && v <= 1000; 

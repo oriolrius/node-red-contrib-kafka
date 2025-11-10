@@ -1,11 +1,11 @@
-<script type="text/html" data-help-name="hm-kafka-consumer">
+<script type="text/html" data-help-name="oriolrius-kafka-consumer">
     <p>Receive messages from a Kafka topic.</p>
     <p>This node subscribes to the specified Kafka topic and outputs received messages.</p>
     <p>Optionally decodes message payloads using registered Avro schemas from Confluent Schema Registry.</p>
     <p>Messages are output as they are received. Use the groupid property to control message distribution across multiple consumers.</p>
 </script>
 
-<script type="text/html" data-template-name="hm-kafka-consumer">
+<script type="text/html" data-template-name="oriolrius-kafka-consumer">
 
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name </label>
@@ -108,13 +108,13 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('hm-kafka-consumer', {
+    RED.nodes.registerType('oriolrius-kafka-consumer', {
         category: 'IOT',
         paletteLabel: "Kafka Receive",
         color: '#CE93D8',
         defaults: {
             name: { required: false },
-            broker: { type: "hm-kafka-broker" },
+            broker: { type: "oriolrius-kafka-broker" },
             topic: { required: true },
             groupid: { required: false },
             fromOffset: { value: "latest" },

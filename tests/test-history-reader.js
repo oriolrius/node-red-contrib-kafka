@@ -104,7 +104,7 @@ const RED = {
                 fromOffset: 'earliest',
                 encoding: 'utf8',
                 useSchemaValidation: false,
-                type: 'hm-kafka-history-reader'
+                type: 'oriolrius-kafka-history-reader'
             };
             
             const node = {};

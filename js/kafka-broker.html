@@ -1,11 +1,11 @@
-<script type="text/html" data-help-name="hm-kafka-broker">
+<script type="text/html" data-help-name="oriolrius-kafka-broker">
     <p>Configure connection settings for Kafka cluster.</p>
     <p>This node defines the broker configuration that will be used by Kafka Send, Kafka Receive, and Kafka Schema Send nodes.</p>
     <p>"Hosts" can contain multiple brokers separated by commas, e.g.: localhost:9092,broker2:9092</p>
     <p>Supports SASL authentication (PLAIN, SCRAM-SHA-256, SCRAM-SHA-512) and TLS/SSL encryption.</p>
 </script>
 
-<script type="text/html" data-template-name="hm-kafka-broker">
+<script type="text/html" data-template-name="oriolrius-kafka-broker">
 
     <div class="form-row">
         <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
@@ -121,7 +121,7 @@
 
 	const optionHtml = dataTypes.map(({value,label})=>`<option value="${value}">${label}</option>\n`);
 
-    RED.nodes.registerType('hm-kafka-broker',{
+    RED.nodes.registerType('oriolrius-kafka-broker',{
         category: 'config',
         icon: "setting.png",
         defaults: {

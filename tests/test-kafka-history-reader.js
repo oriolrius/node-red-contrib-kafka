@@ -19,7 +19,7 @@ describe('Kafka History Reader Node', function () {
         const flow = [
             { 
                 id: "n1", 
-                type: "hm-kafka-history-reader", 
+                type: "oriolrius-kafka-history-reader", 
                 name: "test history reader",
                 broker: "b1",
                 topic: "test-topic",
@@ -29,7 +29,7 @@ describe('Kafka History Reader Node', function () {
             },
             {
                 id: "b1",
-                type: "hm-kafka-broker",
+                type: "oriolrius-kafka-broker",
                 name: "test broker",
                 hosts: "localhost:9092",
                 clientId: "test-client"
@@ -39,7 +39,7 @@ describe('Kafka History Reader Node', function () {
         helper.load([kafkaBrokerNode, kafkaHistoryReaderNode], flow, function () {
             const n1 = helper.getNode("n1");
             n1.should.have.property('name', 'test history reader');
-            n1.should.have.property('type', 'hm-kafka-history-reader');
+            n1.should.have.property('type', 'oriolrius-kafka-history-reader');
             done();
         });
     });
@@ -48,7 +48,7 @@ describe('Kafka History Reader Node', function () {
         const flow = [
             { 
                 id: "n1", 
-                type: "hm-kafka-history-reader", 
+                type: "oriolrius-kafka-history-reader", 
                 name: "test history reader",
                 broker: "b1",
                 topic: "sensor-data",
@@ -60,7 +60,7 @@ describe('Kafka History Reader Node', function () {
             },
             {
                 id: "b1",
-                type: "hm-kafka-broker",
+                type: "oriolrius-kafka-broker",
                 name: "test broker",
                 hosts: "localhost:9092",
                 clientId: "test-client"
@@ -86,7 +86,7 @@ describe('Kafka History Reader Node', function () {
         const flow = [
             { 
                 id: "n1", 
-                type: "hm-kafka-history-reader", 
+                type: "oriolrius-kafka-history-reader", 
                 name: "test history reader"
                 // Missing required properties: broker, topic, messageTypes
             }
@@ -107,7 +107,7 @@ describe('Kafka History Reader Node', function () {
         const flow = [
             { 
                 id: "n1", 
-                type: "hm-kafka-history-reader", 
+                type: "oriolrius-kafka-history-reader", 
                 name: "test history reader",
                 broker: "b1",
                 topic: "test-topic",
@@ -117,7 +117,7 @@ describe('Kafka History Reader Node', function () {
             },
             {
                 id: "b1",
-                type: "hm-kafka-broker",
+                type: "oriolrius-kafka-broker",
                 name: "test broker",
                 hosts: "localhost:9092",
                 clientId: "test-client"
@@ -172,7 +172,7 @@ describe('Kafka History Reader Node', function () {
         const flow = [
             { 
                 id: "n1", 
-                type: "hm-kafka-history-reader", 
+                type: "oriolrius-kafka-history-reader", 
                 name: "test history reader",
                 broker: "missing-broker",
                 topic: "test-topic",

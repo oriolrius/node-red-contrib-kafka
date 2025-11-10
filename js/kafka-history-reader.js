@@ -306,5 +306,5 @@ module.exports = function(RED) {
         node.init();
     }
 
-    RED.nodes.registerType("hm-kafka-history-reader", KafkaHistoryReaderNode);
+    RED.nodes.registerType("oriolrius-kafka-history-reader", KafkaHistoryReaderNode);
 };

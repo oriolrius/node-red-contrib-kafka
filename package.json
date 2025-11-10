@@ -1,14 +1,14 @@
 {
     "name": "@oriolrius/node-red-contrib-kafka",
-    "version": "5.1.2",
+    "version": "6.0.0",
     "description": "Node-RED Kafka nodes: Send, Receive, and Schema validation with modern KafkaJS",
     "node-red": {
         "version": ">=3.0.0",
         "nodes": {
-            "hm-kafka-broker": "./js/kafka-broker.js",
-            "hm-kafka-producer": "./js/kafka-producer.js",
-            "hm-kafka-consumer": "./js/kafka-consumer.js",
-            "hm-kafka-history-reader": "./js/kafka-history-reader.js"
+            "oriolrius-kafka-broker": "./js/kafka-broker.js",
+            "oriolrius-kafka-producer": "./js/kafka-producer.js",
+            "oriolrius-kafka-consumer": "./js/kafka-consumer.js",
+            "oriolrius-kafka-history-reader": "./js/kafka-history-reader.js"
         },
         "keywords": [
             "node-red",

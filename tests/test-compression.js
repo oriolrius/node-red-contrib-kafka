@@ -71,7 +71,7 @@ const mockRED = {
             return mockBroker;
         },
         registerType: function(type, constructor) {
-            if (type === 'hm-kafka-producer') {
+            if (type === 'oriolrius-kafka-producer') {
                 mockRED._producerConstructor = constructor;
             }
             console.log(`✅ Node registered: ${type}`);

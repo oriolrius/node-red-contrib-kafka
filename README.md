@@ -16,15 +16,15 @@ This Node-RED Kafka client is based on the original `node-red-contrib-kafka` imp
 
 This node can be used to produce and consume messages to/from Kafka. It consists of five nodes:
 
-- **Kafka Broker** (hm-kafka-broker) - Connection configuration
-- **Kafka Send** (hm-kafka-producer) - Send messages to Kafka topics  
-- **Kafka Receive** (hm-kafka-consumer) - Receive messages from Kafka topics
-- **Kafka Schema Send** (hm-kafka-schema-producer) - Send messages with Avro schema validation
-- **Kafka History Reader** (hm-kafka-history-reader) - Retrieve historical messages by type
+- **Kafka Broker** (oriolrius-kafka-broker) - Connection configuration
+- **Kafka Send** (oriolrius-kafka-producer) - Send messages to Kafka topics  
+- **Kafka Receive** (oriolrius-kafka-consumer) - Receive messages from Kafka topics
+- **Kafka Schema Send** (oriolrius-kafka-producer) - Send messages with Avro schema validation
+- **Kafka History Reader** (oriolrius-kafka-history-reader) - Retrieve historical messages by type
 
 ### Schema Registry Support
 
-**NEW**: The `hm-kafka-schema-producer` node adds Avro schema validation support using Confluent Schema Registry. This node:
+**NEW**: The `oriolrius-kafka-producer` node adds Avro schema validation support using Confluent Schema Registry. This node:
 
 - Validates message payloads against registered Avro schemas
 - Supports both latest and specific schema versions for production stability
@@ -36,7 +36,7 @@ This node can be used to produce and consume messages to/from Kafka. It consists
 
 ### Kafka History Reader
 
-**NEW**: The `hm-kafka-history-reader` node allows you to retrieve historical messages of specific types from Kafka topics. This is particularly useful for:
+**NEW**: The `oriolrius-kafka-history-reader` node allows you to retrieve historical messages of specific types from Kafka topics. This is particularly useful for:
 
 - Getting the last known values of specific message types before starting real-time consumption
 - Initializing your application state with historical data

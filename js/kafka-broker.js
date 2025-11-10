@@ -96,5 +96,5 @@ module.exports = function (RED) {
 
     }
 
-    RED.nodes.registerType("hm-kafka-broker", KafkaBrokerNode);
+    RED.nodes.registerType("oriolrius-kafka-broker", KafkaBrokerNode);
 }

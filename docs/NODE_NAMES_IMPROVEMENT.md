@@ -10,7 +10,7 @@ This document outlines the improvements made to the Node-RED Kafka node names to
 
 | Node Type | Old Name/Label | New PaletteLabel | New Label | Improvement |
 |-----------|----------------|------------------|-----------|-------------|
-| **Broker** | "hm-kafka-broker" | "Kafka Broker" | "Kafka Broker" | ✅ Clear, concise connection config |
+| **Broker** | "oriolrius-kafka-broker" | "Kafka Broker" | "Kafka Broker" | ✅ Clear, concise connection config |
 | **Producer** | "Data to Cloud" | "Kafka Send" | "Kafka Send" | ✅ Direct, action-oriented |
 | **Consumer** | "Data Subscription" | "Kafka Receive" | "Kafka Receive" | ✅ Clear receive action |
 | **Schema Producer** | "Publish with Schema" | "Kafka Schema Send" | "Kafka Schema Send" | ✅ Consistent with "Send" pattern |

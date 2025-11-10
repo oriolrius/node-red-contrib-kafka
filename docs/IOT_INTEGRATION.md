@@ -113,7 +113,7 @@ Complete Node-RED flow example for IoT integration:
     },
     {
         "id": "ce8b5c02b1f4c17c",
-        "type": "hm-kafka-producer",
+        "type": "oriolrius-kafka-producer",
         "z": "38455e3c08fa62ab",
         "name": "",
         "broker": "f7b89f9454780a93",
@@ -127,7 +127,7 @@ Complete Node-RED flow example for IoT integration:
     },
     {
         "id": "4b2b5ddfd4f03b36",
-        "type": "hm-kafka-consumer",
+        "type": "oriolrius-kafka-consumer",
         "z": "38455e3c08fa62ab",
         "name": "",
         "broker": "f7b89f9454780a93",
@@ -182,7 +182,7 @@ Complete Node-RED flow example for IoT integration:
     },
     {
         "id": "f7b89f9454780a93",
-        "type": "hm-kafka-broker",
+        "type": "oriolrius-kafka-broker",
         "name": "",
         "hosts": "147.13.93.122:19004",
         "usesasl": false,

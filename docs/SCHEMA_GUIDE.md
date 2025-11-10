@@ -16,7 +16,7 @@ The Kafka Schema Producer node provides:
 
 ### Required Settings
 
-1. **Kafka Broker**: Configure your existing hm-kafka-broker node
+1. **Kafka Broker**: Configure your existing oriolrius-kafka-broker node
 2. **Schema Registry**: Set up Schema Registry connection (usually running on port 8081)
 3. **Topic**: The Kafka topic where messages will be published
 4. **Schema Subject**: The subject name in Schema Registry (e.g., "my-topic-value")
@@ -225,7 +225,7 @@ Request: subject="test-topic-value", version="3"
 ```json
 {
   "id": "schema-producer-basic",
-  "type": "hm-kafka-schema-producer",
+  "type": "oriolrius-kafka-producer",
   "name": "Basic Schema Producer",
   "broker": "broker1",
   "topic": "test-topic",
@@ -241,7 +241,7 @@ Request: subject="test-topic-value", version="3"
 ```json
 {
   "id": "schema-producer-prod",
-  "type": "hm-kafka-schema-producer",
+  "type": "oriolrius-kafka-producer",
   "name": "Producer (Schema v3)",
   "broker": "broker1",
   "topic": "test-topic",
@@ -319,7 +319,7 @@ Error output example:
     },
     {
         "id": "schema-producer1",
-        "type": "hm-kafka-schema-producer",
+        "type": "oriolrius-kafka-producer",
         "name": "Publish with Schema",
         "broker": "broker1",
         "topic": "test-topic",

@@ -1,4 +1,4 @@
-<script type="text/html" data-help-name="hm-kafka-producer">
+<script type="text/html" data-help-name="oriolrius-kafka-producer">
     <p>Send messages to a Kafka topic.</p>
     <p>This node publishes the incoming message payload to the specified Kafka topic.</p>
     <p>Optionally validates message payloads against registered Avro schemas using Confluent Schema Registry.</p>
@@ -6,7 +6,7 @@
     <p>On successful send, the node status shows "Sending". On failure, shows "Error".</p>
 </script>
 
-<script type="text/html" data-template-name="hm-kafka-producer">
+<script type="text/html" data-template-name="oriolrius-kafka-producer">
 
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name </label>
@@ -148,13 +148,13 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('hm-kafka-producer', {
+    RED.nodes.registerType('oriolrius-kafka-producer', {
         category: 'IOT',
         paletteLabel: "Kafka Send",
         color: '#CE93D8',
         defaults: {
             name: { required: false },
-            broker: { type: "hm-kafka-broker" },
+            broker: { type: "oriolrius-kafka-broker" },
             topic: { required: true },
             requireAcks: { value: 1, required: true },
             ackTimeoutMs: { value: 100, required: true },

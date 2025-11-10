@@ -161,7 +161,7 @@ async function runSimpleKafkaTest() {
         const originalRegisterType = mockRED.nodes.registerType;
         mockRED.nodes.registerType = function(type, constructor) {
             console.log(`✅ Node registered: ${type}`);
-            if (type === 'hm-kafka-producer') {
+            if (type === 'oriolrius-kafka-producer') {
                 KafkaProducerConstructor = constructor;
             }
         };
@@ -217,7 +217,7 @@ async function runSimpleKafkaTest() {
         let KafkaConsumerConstructor = null;
         mockRED.nodes.registerType = function(type, constructor) {
             console.log(`✅ Node registered: ${type}`);
-            if (type === 'hm-kafka-consumer') {
+            if (type === 'oriolrius-kafka-consumer') {
                 KafkaConsumerConstructor = constructor;
             }
         };
