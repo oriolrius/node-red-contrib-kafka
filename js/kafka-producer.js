@@ -6,14 +6,14 @@ module.exports = function (RED) {
     // Register compression codecs
     try {
         const SnappyCodec = require('kafkajs-snappy');
-        CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec;
+        CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec();
     } catch (error) {
         // Snappy codec not available
     }
 
     try {
         const LZ4Codec = require('kafkajs-lz4');
-        CompressionCodecs[CompressionTypes.LZ4] = LZ4Codec;
+        CompressionCodecs[CompressionTypes.LZ4] = new LZ4Codec();
     } catch (error) {
         // LZ4 codec not available
     }

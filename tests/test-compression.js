@@ -255,64 +255,67 @@ for (const mapping of compressionMappings) {
     }
 }
 
-// Test 5: Test codec functionality
-console.log('\n📝 Test 5: Testing codec compress/decompress functionality');
+// Test 5: Test codec instantiation
+console.log('\n📝 Test 5: Testing codec instantiation');
 console.log('--------------------------------------------------');
 
 async function testCodecFunctionality() {
-    const testData = Buffer.from('Hello, Kafka compression test! This is a longer message to test compression ratios.');
     const results = [];
 
-    // Test Snappy - using the codec interface expected by KafkaJS
+    // Test Snappy - verify it can be instantiated as a factory function
     try {
         const SnappyCodec = require('kafkajs-snappy');
 
-        // The codec should have compress and decompress methods
-        if (typeof SnappyCodec.compress === 'function' && typeof SnappyCodec.decompress === 'function') {
-            const compressed = await SnappyCodec.compress(testData);
-            const decompressed = await SnappyCodec.decompress(compressed);
+        // Test that it can be called as a factory function (without 'new')
+        let codec;
+        try {
+            codec = SnappyCodec();
+            console.log('✅ Snappy: Codec created successfully via factory function');
+        } catch (instantiateError) {
+            console.log('❌ Snappy: Failed to create codec:', instantiateError.message);
+            results.push(false);
+            throw instantiateError;
+        }
 
-            if (decompressed.equals(testData)) {
-                console.log(`✅ Snappy: Compress/Decompress successful (${testData.length} bytes -> ${compressed.length} bytes -> ${decompressed.length} bytes)`);
-                results.push(true);
-            } else {
-                console.log('❌ Snappy: Decompressed data does not match original');
-                results.push(false);
-            }
+        // Verify the instance has required methods
+        if (typeof codec.compress === 'function' && typeof codec.decompress === 'function') {
+            console.log('✅ Snappy: Codec has compress and decompress methods');
+            results.push(true);
         } else {
-            // Codec is registered but direct testing requires KafkaJS integration
-            console.log('⚠️  Snappy: Codec registered successfully (direct testing requires KafkaJS integration)');
-            results.push(true); // Consider it passed since it's registered
+            console.log('❌ Snappy: Codec instance missing compress/decompress methods');
+            results.push(false);
         }
     } catch (error) {
-        console.log('⚠️  Snappy codec direct test skipped:', error.message);
-        results.push(true); // Don't fail the test for this
+        console.log('❌ Snappy codec test failed:', error.message);
+        results.push(false);
     }
 
-    // Test LZ4 - using the codec interface expected by KafkaJS
+    // Test LZ4 - verify it can be instantiated with 'new'
     try {
         const LZ4Codec = require('kafkajs-lz4');
 
-        // The codec should have compress and decompress methods
-        if (typeof LZ4Codec.compress === 'function' && typeof LZ4Codec.decompress === 'function') {
-            const compressed = await LZ4Codec.compress(testData);
-            const decompressed = await LZ4Codec.decompress(compressed);
+        // Test that it can be instantiated with 'new'
+        let codec;
+        try {
+            codec = new LZ4Codec();
+            console.log('✅ LZ4: Codec instantiated successfully with new keyword');
+        } catch (instantiateError) {
+            console.log('❌ LZ4: Failed to instantiate codec:', instantiateError.message);
+            results.push(false);
+            throw instantiateError;
+        }
 
-            if (decompressed.equals(testData)) {
-                console.log(`✅ LZ4: Compress/Decompress successful (${testData.length} bytes -> ${compressed.length} bytes -> ${decompressed.length} bytes)`);
-                results.push(true);
-            } else {
-                console.log('❌ LZ4: Decompressed data does not match original');
-                results.push(false);
-            }
+        // Verify the instance has required methods
+        if (typeof codec.compress === 'function' && typeof codec.decompress === 'function') {
+            console.log('✅ LZ4: Codec has compress and decompress methods');
+            results.push(true);
         } else {
-            // Codec is registered but direct testing requires KafkaJS integration
-            console.log('⚠️  LZ4: Codec registered successfully (direct testing requires KafkaJS integration)');
-            results.push(true); // Consider it passed since it's registered
+            console.log('❌ LZ4: Codec instance missing compress/decompress methods');
+            results.push(false);
         }
     } catch (error) {
-        console.log('⚠️  LZ4 codec direct test skipped:', error.message);
-        results.push(true); // Don't fail the test for this
+        console.log('❌ LZ4 codec test failed:', error.message);
+        results.push(false);
     }
 
     return results;

@@ -1,5 +1,21 @@
 module.exports = function(RED) {
     const { SchemaRegistry } = require('@kafkajs/confluent-schema-registry');
+    const { CompressionTypes, CompressionCodecs } = require('kafkajs');
+
+    // Register compression codecs
+    try {
+        const SnappyCodec = require('kafkajs-snappy');
+        CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec();
+    } catch (error) {
+        // Snappy codec not available
+    }
+
+    try {
+        const LZ4Codec = require('kafkajs-lz4');
+        CompressionCodecs[CompressionTypes.LZ4] = new LZ4Codec();
+    } catch (error) {
+        // LZ4 codec not available
+    }
 
     function KafkaHistoryReaderNode(config) {
         RED.nodes.createNode(this, config);

@@ -13,7 +13,7 @@ const { CompressionTypes, CompressionCodecs } = kafkajs;
 // Register compression codecs
 try {
     const SnappyCodec = require('kafkajs-snappy');
-    CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec;
+    CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec();
     console.log('✅ Snappy codec registered');
 } catch (error) {
     console.log('❌ Failed to register Snappy codec:', error.message);
@@ -21,7 +21,7 @@ try {
 
 try {
     const LZ4Codec = require('kafkajs-lz4');
-    CompressionCodecs[CompressionTypes.LZ4] = LZ4Codec;
+    CompressionCodecs[CompressionTypes.LZ4] = new LZ4Codec();
     console.log('✅ LZ4 codec registered');
 } catch (error) {
     console.log('❌ Failed to register LZ4 codec:', error.message);

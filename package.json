@@ -1,6 +1,6 @@
 {
     "name": "@oriolrius/node-red-contrib-kafka",
-    "version": "5.1.1",
+    "version": "5.1.2",
     "description": "Node-RED Kafka nodes: Send, Receive, and Schema validation with modern KafkaJS",
     "node-red": {
         "version": ">=3.0.0",
