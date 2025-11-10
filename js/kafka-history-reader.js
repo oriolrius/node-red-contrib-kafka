@@ -3,16 +3,17 @@ module.exports = function(RED) {
     const { CompressionTypes, CompressionCodecs } = require('kafkajs');
 
     // Register compression codecs
+    // KafkaJS expects factory functions that return codec instances
     try {
         const SnappyCodec = require('kafkajs-snappy');
-        CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec();
+        CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec;  // Factory function
     } catch (error) {
         // Snappy codec not available
     }
 
     try {
         const LZ4Codec = require('kafkajs-lz4');
-        CompressionCodecs[CompressionTypes.LZ4] = new LZ4Codec();
+        CompressionCodecs[CompressionTypes.LZ4] = () => new LZ4Codec();  // Factory function wrapper
     } catch (error) {
         // LZ4 codec not available
     }
