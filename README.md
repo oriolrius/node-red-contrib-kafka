@@ -19,7 +19,7 @@ This node can be used to produce and consume messages to/from Kafka. It consists
 - **Kafka Broker** (oriolrius-kafka-broker) - Connection configuration
 - **Kafka Send** (oriolrius-kafka-producer) - Send messages to Kafka topics  
 - **Kafka Receive** (oriolrius-kafka-consumer) - Receive messages from Kafka topics
-- **Kafka Schema Send** (oriolrius-kafka-producer) - Send messages with Avro schema validation
+- **Kafka Schema Send** (oriolrius-kafka-producer) - Send messages with Avro or Protobuf schema validation
 - **Kafka History Reader** (oriolrius-kafka-history-reader) - Retrieve historical messages by type
 
 ### Schema Registry Support
@@ -33,6 +33,17 @@ This node can be used to produce and consume messages to/from Kafka. It consists
 - Integrates with Confluent Schema Registry authentication
 - Ensures data consistency and compatibility across your Kafka ecosystem
 - **Version-aware caching**: Automatically fetches new schemas when version changes
+
+### Protobuf Support
+
+Since v6.2.0 the producer can also serialize with **Protobuf** (first contribution by [@YRoshcha](https://github.com/YRoshcha) in [#4](https://github.com/oriolrius/node-red-contrib-kafka/pull/4)):
+
+- **Schema Registry mode**: Confluent wire format with the real message indexes, so any message of the `.proto` (including nested ones) is readable by Confluent consumers; auto-registration of the `.proto`, or the schema read from the registry
+- **Raw mode**: plain Protobuf bytes, no Schema Registry
+- Strict payload validation (types, enum values, unknown fields) using the Protobuf JSON mapping
+- Kafka Receive and Kafka History Reader decode Protobuf messages from any Confluent-compatible producer
+
+See the [Protobuf Guide](docs/PROTOBUF_PRODUCER_GUIDE.md).
 
 ### Kafka History Reader
 
@@ -87,6 +98,7 @@ This project includes comprehensive documentation to help you get started and un
 
 ### Getting Started
 
+- **[Protobuf Guide](docs/PROTOBUF_PRODUCER_GUIDE.md)** - Protobuf serialization with or without Schema Registry
 - **[Schema Guide](docs/SCHEMA_GUIDE.md)** - Complete guide to using Avro schema validation and version management with the Schema Producer node
 - **[Kafka History Reader Guide](docs/KAFKA_HISTORY_READER_GUIDE.md)** - Complete guide to using the Kafka History Reader for retrieving historical messages
 - **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Guide for migrating from legacy kafka-node based implementations

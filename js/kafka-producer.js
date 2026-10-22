@@ -1,7 +1,8 @@
 module.exports = function (RED) {
-    const { SchemaRegistry } = require('@kafkajs/confluent-schema-registry');
+    const { SchemaRegistry, SchemaType } = require('@kafkajs/confluent-schema-registry');
     const { CompressionTypes, CompressionCodecs } = require('kafkajs');
     const { getNameTypes, getMsgValues } = require('./utils');
+    const protobufWire = require('./protobuf-wire');
 
     // Register compression codecs
     // KafkaJS expects factory functions that return codec instances
@@ -42,6 +43,12 @@ module.exports = function (RED) {
         node.cachedSchemaVersion = null;
         node.lastMessageTime = null;
         node.messageCount = 0;
+        // Protobuf (serializationType 'protobuf'): 'registry' = Confluent wire format, 'raw' = plain bytes
+        node.isProtobuf = config.useSchemaValidation && config.serializationType === 'protobuf';
+        node.protobufMode = config.protobufMode === 'raw' ? 'raw' : 'registry';
+        node.protobufRoot = null;
+        node.protobufType = null;
+        node.cachedProtobufSchemas = new Map();
 
         let iotOptions = {};
 
@@ -74,8 +81,25 @@ module.exports = function (RED) {
                 node.debug(`[Kafka Producer] Using producer IoT configuration`);
             }
             
+            // Local .proto: required in raw mode, optional with Schema Registry (fetched by ID when empty)
+            if (node.isProtobuf && config.protobufSchema && config.protobufSchema.trim() !== '') {
+                try {
+                    node.protobufRoot = protobufWire.parseSchema(config.protobufSchema);
+                    node.protobufType = protobufWire.resolveType(node.protobufRoot, config.protobufMessageName);
+                    node.debug(`[Kafka Protobuf Producer] Loaded message type ${node.protobufType.fullName}`);
+                } catch (error) {
+                    node.error(`[Kafka Protobuf Producer] Invalid .proto schema: ${error.message}`);
+                    node.status({ fill: "red", shape: "ring", text: "Invalid .proto schema" });
+                    return;
+                }
+            } else if (node.isProtobuf && node.protobufMode === 'raw') {
+                node.error(`[Kafka Protobuf Producer] Raw Protobuf mode needs a .proto schema`);
+                node.status({ fill: "red", shape: "ring", text: "Missing .proto schema" });
+                return;
+            }
+
             // Initialize Schema Registry only if schema validation is enabled
-            if (config.useSchemaValidation) {
+            if (config.useSchemaValidation && !(node.isProtobuf && node.protobufMode === 'raw')) {
                 node.status({ fill: "yellow", shape: "ring", text: "Connecting to Schema Registry..." });
             try {
                 const registryConfig = {
@@ -240,6 +264,66 @@ module.exports = function (RED) {
             }
         };
 
+        // Protobuf + Schema Registry: returns { schemaId, type } for the configured subject.
+        // With a local .proto, the ID is the one registered for exactly that schema (registered on
+        // demand when auto-register is on). Without it, the schema version is read from the registry.
+        node.getProtobufSchema = async function() {
+            const version = config.schemaVersion && config.schemaVersion.trim() !== '' ? config.schemaVersion.trim() : 'latest';
+            const cacheKey = node.protobufType ? 'local' : version;
+            if (node.cachedProtobufSchemas.has(cacheKey)) {
+                return node.cachedProtobufSchemas.get(cacheKey);
+            }
+
+            let result;
+            if (node.protobufType) {
+                const confluentSchema = { type: SchemaType.PROTOBUF, schema: config.protobufSchema };
+                let schemaId;
+                try {
+                    schemaId = await node.schemaRegistry.getRegistryIdBySchema(config.schemaSubject, confluentSchema);
+                } catch (error) {
+                    const notFound = error.status === 404 || /not found/i.test(error.message || '');
+                    if (!notFound) {
+                        throw error;
+                    }
+                    if (!config.autoRegister) {
+                        throw new Error(`The local .proto schema is not registered under subject ${config.schemaSubject} (${error.message}); enable auto-register or register it first`);
+                    }
+                    node.status({ fill: "blue", shape: "ring", text: "Registering schema..." });
+                    // REST call instead of schemaRegistry.register(): its Protobuf parser picks the
+                    // first declaration of the file and fails when that is an enum
+                    const response = await node.schemaRegistry.api.Subject.register({
+                        subject: config.schemaSubject,
+                        body: { schemaType: SchemaType.PROTOBUF, schema: config.protobufSchema }
+                    });
+                    schemaId = response.data().id;
+                    node.debug(`[Kafka Protobuf Producer] Registered .proto under ${config.schemaSubject} with ID ${schemaId}`);
+                }
+                result = { schemaId, type: node.protobufType };
+            } else {
+                let schemaId;
+                if (version === 'latest') {
+                    schemaId = await node.schemaRegistry.getLatestSchemaId(config.schemaSubject);
+                } else {
+                    const versionNumber = parseInt(version);
+                    if (isNaN(versionNumber) || versionNumber <= 0) {
+                        throw new Error(`Invalid schema version: ${version}. Must be 'latest' or a positive integer.`);
+                    }
+                    schemaId = await node.schemaRegistry.getRegistryId(config.schemaSubject, versionNumber);
+                }
+                const found = (await node.schemaRegistry.api.Schema.find({ id: schemaId })).data();
+                if (found.schemaType !== SchemaType.PROTOBUF) {
+                    throw new Error(`Schema ${schemaId} of subject ${config.schemaSubject} is ${found.schemaType || 'AVRO'}, not PROTOBUF`);
+                }
+                const root = protobufWire.parseSchema(found.schema);
+                result = { schemaId, type: protobufWire.resolveType(root, config.protobufMessageName) };
+            }
+
+            node.debug(`[Kafka Protobuf Producer] Using schema ID ${result.schemaId}, message ${result.type.fullName}`);
+            node.cachedProtobufSchemas.set(cacheKey, result);
+            node.status({ fill: "blue", shape: "ring", text: `Schema ID ${result.schemaId}` });
+            return result;
+        };
+
         node.on('input', async function (msg) {
             const nodeType = config.useSchemaValidation ? 'Schema Producer' : 'Producer';
             node.debug(`[Kafka ${nodeType}] Received input message`);
@@ -260,7 +344,15 @@ module.exports = function (RED) {
                     node.status({ fill: "blue", shape: "dot", text: "Validating schema" });
                     
                     // Get or register schema
-                    schemaId = await node.getOrRegisterSchema();
+                    let protobufTarget = null;
+                    if (!node.isProtobuf) {
+                        schemaId = await node.getOrRegisterSchema();
+                    } else if (node.protobufMode === 'registry') {
+                        protobufTarget = await node.getProtobufSchema();
+                        schemaId = protobufTarget.schemaId;
+                    } else {
+                        protobufTarget = { schemaId: null, type: node.protobufType };
+                    }
                     
                     // Prepare message data for schema validation
                     if (typeof messageData === 'string') {
@@ -278,7 +370,13 @@ module.exports = function (RED) {
                     // Encode message with schema validation
                     node.status({ fill: "blue", shape: "dot", text: "Encoding message" });
                     try {
-                        encodedMessage = await node.schemaRegistry.encode(schemaId, messageData);
+                        if (!node.isProtobuf) {
+                            encodedMessage = await node.schemaRegistry.encode(schemaId, messageData);
+                        } else if (node.protobufMode === 'registry') {
+                            encodedMessage = protobufWire.encodeConfluent(schemaId, protobufTarget.type, messageData);
+                        } else {
+                            encodedMessage = protobufWire.encodeRaw(protobufTarget.type, messageData);
+                        }
                         node.debug(`[Kafka Schema Producer] Message validated and encoded successfully`);
                     } catch (encodeError) {
                         node.error(`[Kafka Schema Producer] Schema validation failed: ${encodeError.message}`);
@@ -411,6 +509,7 @@ module.exports = function (RED) {
             node.messageCount = 0;
             node.cachedSchemaId = null;
             node.cachedSchemaVersion = null;
+            node.cachedProtobufSchemas.clear();
             clearInterval(node.interval);
             
             if (node.producer) {

@@ -1,6 +1,7 @@
 module.exports = function(RED) {
     const { SchemaRegistry } = require('@kafkajs/confluent-schema-registry');
     const { CompressionTypes, CompressionCodecs } = require('kafkajs');
+    const { createSchemaDecoder } = require('./protobuf-wire');
 
     // Register compression codecs
     // KafkaJS expects factory functions that return codec instances
@@ -58,6 +59,7 @@ module.exports = function(RED) {
                     }
                     
                     node.schemaRegistry = new SchemaRegistry(registryConfig);
+                    node.schemaDecoder = createSchemaDecoder(node.schemaRegistry);
                     node.debug(`[Kafka History Reader] Schema Registry initialized`);
                 } catch (error) {
                     node.error(`[Kafka History Reader] Schema Registry initialization failed: ${error.message}`);
@@ -166,7 +168,7 @@ module.exports = function(RED) {
                             node.debug(`[Kafka History Reader] Raw message value: ${rawValue.substring(0, 200)}...`);
                             
                             if (config.useSchemaValidation && node.schemaRegistry) {
-                                decodedValue = await node.schemaRegistry.decode(message.value);
+                                decodedValue = await node.schemaDecoder.decode(message.value);
                             } else {
                                 if (rawValue) {
                                     try {

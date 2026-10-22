@@ -1,6 +1,7 @@
 module.exports = function(RED) {
     const { SchemaRegistry } = require('@kafkajs/confluent-schema-registry');
     const { CompressionTypes, CompressionCodecs } = require('kafkajs');
+    const { createSchemaDecoder, parseSchema } = require('./protobuf-wire');
 
     // Register compression codecs
     // KafkaJS expects factory functions that return codec instances
@@ -74,6 +75,7 @@ module.exports = function(RED) {
                     }
 
                     node.schemaRegistry = new SchemaRegistry(registryConfig);
+                    node.schemaDecoder = createSchemaDecoder(node.schemaRegistry);
                     node.debug(`[Kafka Schema Consumer] Schema Registry client created for: ${config.registryUrl}`);
                 } catch (error) {
                     node.error(`[Kafka Schema Consumer] Failed to create Schema Registry client: ${error.message}`);
@@ -150,7 +152,7 @@ module.exports = function(RED) {
                     
                     if (config.useSchemaValidation) {
                         // Decode the Avro message
-                        decodedValue = await node.schemaRegistry.decode(message.value);
+                        decodedValue = await node.schemaDecoder.decode(message.value);
                         node.debug(`[Kafka Schema Consumer] Message decoded successfully`);
                     } else {
                         // Parse as regular JSON or use raw value
@@ -269,8 +271,13 @@ module.exports = function(RED) {
                     const schemaId = await node.schemaRegistry.getLatestSchemaId(config.schemaSubject);
                     node.debug(`[Kafka Schema Consumer] Found existing schema ID: ${schemaId}`);
                     
-                    // Cache the schema for faster lookups
-                    const schema = await node.schemaRegistry.getSchema(schemaId);
+                    // Cache the schema for faster lookups. Protobuf schemas are checked with
+                    // protobufjs: the registry client's own Protobuf parser fails when the first
+                    // declaration of the .proto is an enum
+                    const found = (await node.schemaRegistry.api.Schema.find({ id: schemaId })).data();
+                    const schema = found.schemaType === 'PROTOBUF'
+                        ? parseSchema(found.schema)
+                        : await node.schemaRegistry.getSchema(schemaId);
                     node.cachedSchemas.set(schemaId, schema);
                     node.debug(`[Kafka Schema Consumer] Schema cached successfully`);
                     
@@ -302,6 +309,9 @@ module.exports = function(RED) {
             // Clear schema cache
             if (node.cachedSchemas) {
                 node.cachedSchemas.clear();
+            }
+            if (node.schemaDecoder) {
+                node.schemaDecoder.clear();
             }
             
             if (node.consumer) {

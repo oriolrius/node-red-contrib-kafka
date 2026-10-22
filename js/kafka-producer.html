@@ -1,7 +1,20 @@
 <script type="text/html" data-help-name="oriolrius-kafka-producer">
     <p>Send messages to a Kafka topic.</p>
     <p>This node publishes the incoming message payload to the specified Kafka topic.</p>
-    <p>Optionally validates message payloads against registered Avro schemas using Confluent Schema Registry.</p>
+    <p>Optionally validates and serializes message payloads with a schema:</p>
+    <ul>
+        <li><b>Avro</b> with Confluent Schema Registry.</li>
+        <li><b>Protobuf, Schema Registry</b>: Confluent wire format (magic byte, schema ID, message indexes, payload), readable by Confluent consumers and by Kafka Receive with schema validation.</li>
+        <li><b>Protobuf, raw</b>: plain Protobuf bytes, no Schema Registry.</li>
+    </ul>
+    <h3>Protobuf</h3>
+    <dl class="message-properties">
+        <dt class="optional">.proto schema</dt>
+        <dd>Required in raw mode. With Schema Registry it is optional: when set, the node uses the ID registered for exactly this schema under the subject (registering it if <i>Auto-register</i> is on); when empty, the schema version is read from the registry.</dd>
+        <dt class="optional">Message type</dt>
+        <dd>Message to encode, e.g. <code>Reading</code>, <code>acme.iot.Reading</code> or <code>Outer.Inner</code>. Empty uses the first message of the schema.</dd>
+    </dl>
+    <p>The payload is a JSON object using the Protobuf JSON mapping (enum names, int64 as strings, bytes as base64). Wrong types and unknown fields are rejected. Imports of other registered schemas are not supported.</p>
     <p>Supports message compression, acknowledgment settings, and IoT cloud data formatting.</p>
     <p>On successful send, the node status shows "Sending". On failure, shows "Error".</p>
 </script>
@@ -53,6 +66,33 @@
     <!-- Schema Registry Configuration (shown only when schema validation is enabled) -->
     <div id="node-config-schema" style="display: none;">
         <div class="form-row">
+            <label for="node-input-serializationType"><i class="fa fa-exchange"></i> Format</label>
+            <select id="node-input-serializationType">
+                <option value="avro">Avro (Schema Registry)</option>
+                <option value="protobuf">Protobuf</option>
+            </select>
+        </div>
+
+        <div id="node-config-protobuf" style="display: none;">
+            <div class="form-row">
+                <label for="node-input-protobufMode"><i class="fa fa-database"></i> Protobuf mode</label>
+                <select id="node-input-protobufMode">
+                    <option value="registry">Schema Registry (Confluent wire format)</option>
+                    <option value="raw">Raw (no Schema Registry)</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-protobufSchema"><i class="fa fa-code"></i> .proto schema</label>
+                <textarea id="node-input-protobufSchema" rows="8" style="width: 70%; font-family: monospace;" placeholder='syntax = "proto3";&#10;message Reading {&#10;  string id = 1;&#10;  double value = 2;&#10;}'></textarea>
+            </div>
+            <div class="form-row">
+                <label for="node-input-protobufMessageName"><i class="fa fa-file-code-o"></i> Message type</label>
+                <input type="text" id="node-input-protobufMessageName" placeholder="First message of the schema">
+            </div>
+        </div>
+
+        <div id="node-config-registry">
+        <div class="form-row">
             <h4><i class="fa fa-cog"></i> Schema Registry Configuration</h4>
         </div>
 
@@ -97,6 +137,7 @@
                 <label for="node-input-autoSchema"><i class="fa fa-code"></i> Default Schema (JSON) </label>
                 <textarea id="node-input-autoSchema" rows="8" placeholder='{"type": "record", "name": "Message", "fields": [{"name": "id", "type": "string"}, {"name": "message", "type": "string"}]}'></textarea>
             </div>
+        </div>
         </div>
 
         <div class="form-row">
@@ -164,6 +205,11 @@
             attributes: { value: 0 },
             // Schema Validation
             useSchemaValidation: { value: false },
+            // Serialization: 'avro' (default, also for flows saved before 6.2.0) or 'protobuf'
+            serializationType: { value: "avro" },
+            protobufMode: { value: "registry" },
+            protobufSchema: { value: "" },
+            protobufMessageName: { value: "" },
             // Schema Registry Configuration
             registryUrl: { required: false, value: "http://localhost:8081" },
             schemaSubject: { required: false },
@@ -199,6 +245,23 @@
                 }
             });
 
+            // Avro / Protobuf: registry settings are hidden for raw Protobuf, the Avro default
+            // schema only applies to Avro (Protobuf auto-registers its .proto schema)
+            if (!this.serializationType) {
+                $("#node-input-serializationType").val("avro");
+            }
+            if (!this.protobufMode) {
+                $("#node-input-protobufMode").val("registry");
+            }
+            function updateFormatFields() {
+                var protobuf = $("#node-input-serializationType").val() === "protobuf";
+                var raw = protobuf && $("#node-input-protobufMode").val() === "raw";
+                $("#node-config-protobuf").toggle(protobuf);
+                $("#node-config-registry").toggle(!raw);
+                $("#node-config-auto-schema").toggle(!protobuf && $("#node-input-autoRegister").is(":checked"));
+            }
+            $("#node-input-serializationType, #node-input-protobufMode").change(updateFormatFields);
+
             // Show/hide registry auth fields
             $("#node-input-useRegistryAuth").change(function() {
                 if ($(this).is(":checked")) {
@@ -209,13 +272,7 @@
             });
 
             // Show/hide auto schema registration fields
-            $("#node-input-autoRegister").change(function() {
-                if ($(this).is(":checked")) {
-                    $("#node-config-auto-schema").show();
-                } else {
-                    $("#node-config-auto-schema").hide();
-                }
-            });
+            $("#node-input-autoRegister").change(updateFormatFields);
 
             // Show/hide IoT configuration
             $("#node-input-useiot").change(function() {
@@ -233,9 +290,7 @@
             if (this.useRegistryAuth) {
                 $("#node-config-registry-auth").show();
             }
-            if (this.autoRegister) {
-                $("#node-config-auto-schema").show();
-            }
+            updateFormatFields();
             if (this.useiot) {
                 $("#node-config-iot").show();
             }
