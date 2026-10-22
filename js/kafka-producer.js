@@ -25,6 +25,7 @@ module.exports = function (RED) {
 
         if (config.useiot) {
             options = new Object();
+            options.useiot = true;
             options.model = config.model;
             options.device = config.device;
             options.iotType = config.iotType;
@@ -379,9 +380,9 @@ module.exports = function (RED) {
                         }
                         node.debug(`[Kafka Schema Producer] Message validated and encoded successfully`);
                     } catch (encodeError) {
-                        node.error(`[Kafka Schema Producer] Schema validation failed: ${encodeError.message}`);
                         node.status({ fill: "red", shape: "ring", text: "Validation failed" });
-                        node.send([null, { payload: { error: encodeError.message, data: messageData } }]);
+                        node.error(`[Kafka Schema Producer] Schema validation failed: ${encodeError.message}`,
+                            Object.assign({}, msg, { payload: { error: encodeError.message, data: messageData } }));
                         return;
                     }
 
@@ -410,15 +411,16 @@ module.exports = function (RED) {
                         }
                         
                         const nameTypes = getNameTypes(iotOptions.fields);
-                        const msgValues = getMsgValues(messageData, iotOptions.fields);
+                        // One record (and timestamp) per object; an array payload gives several
+                        const { values, tsList } = getMsgValues(nameTypes, messageData);
                         
                         messageData = {
                             mc: iotOptions.model,
                             dc: iotOptions.device,
                             type: iotOptions.iotType,
                             nameTypes: nameTypes,
-                            ts: [new Date().getTime()],
-                            values: [msgValues]
+                            ts: tsList,
+                            values: values
                         };
                         
                         node.debug(`[Kafka Producer] IoT formatted message:`, messageData);
@@ -478,10 +480,10 @@ module.exports = function (RED) {
 
             } catch (error) {
                 const nodeType = config.useSchemaValidation ? 'Schema Producer' : 'Producer';
-                node.error(`[Kafka ${nodeType}] Error processing message: ${error.message}`, error);
                 node.status({ fill: "red", shape: "ring", text: `Error: ${error.message.substring(0, 15)}...` });
                 node.lastMessageTime = null;
-                node.send([null, { payload: { error: error.message, originalMessage: msg } }]);
+                node.error(`[Kafka ${nodeType}] Error processing message: ${error.message}`,
+                    Object.assign({}, msg, { payload: { error: error.message, originalMessage: msg } }));
             }
         });
 

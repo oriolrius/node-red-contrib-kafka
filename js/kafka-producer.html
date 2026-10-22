@@ -16,7 +16,8 @@
     </dl>
     <p>The payload is a JSON object using the Protobuf JSON mapping (enum names, int64 as strings, bytes as base64). Wrong types and unknown fields are rejected. Imports of other registered schemas are not supported.</p>
     <p>Supports message compression, acknowledgment settings, and IoT cloud data formatting.</p>
-    <p>On successful send, the node status shows "Sending". On failure, shows "Error".</p>
+    <p>On successful send, the node outputs <code>msg.payload = { success, kafkaResult, originalData, topic }</code>.</p>
+    <p>Errors (schema validation, Schema Registry, Kafka) are reported with <code>node.error</code>: use a <b>Catch</b> node to handle them. The caught message has <code>msg.payload.error</code> plus <code>msg.payload.data</code> (validation errors) or <code>msg.payload.originalMessage</code>.</p>
 </script>
 
 <script type="text/html" data-template-name="oriolrius-kafka-producer">
