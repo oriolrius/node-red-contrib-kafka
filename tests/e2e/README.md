@@ -40,20 +40,22 @@ node tests/e2e/simple-e2e-test.js
 
 ### Full Node-RED E2E Test
 
-Tests with actual Node-RED runtime (more complex, experimental):
+Runs this package's nodes inside an embedded Node-RED runtime against the Kafka container:
 
 ```bash
 # From the project root
-node tests/e2e/run-e2e-tests.js
+npm run test:e2e
 ```
 
 **How it works:**
-1. Starts Kafka in Docker
-2. Starts Node-RED runtime programmatically
-3. Deploys test flows with our Kafka nodes
-4. Verifies message delivery
-5. Tests compression with actual nodes
+1. Starts Kafka in Docker (`docker compose up --wait`)
+2. Starts Node-RED with a temporary user dir, loading `js/`
+3. Creates a dedicated topic per test and deploys the flow with `RED.nodes.setFlows`
+4. Captures what the consumer nodes send and waits for the expected messages
+5. Covers basic send/receive with explicit client timeouts, all compression types, batches and a stalled TLS broker
 6. Cleans up everything
+
+`harness.js` holds the shared helpers (Kafka, Node-RED, deploy, capture, `waitFor`).
 
 ## Test Environment
 

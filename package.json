@@ -53,7 +53,8 @@
         "test:comprehensive": "node tests/comprehensive-test.js",
         "test:compression": "node tests/test-compression.js",
         "test:compression:integration": "node tests/test-compression-integration.js",
-        "test:browser": "node tests-real/launch-nodered-with-kafka.js"
+        "test:browser": "node tests-real/launch-nodered-with-kafka.js",
+        "test:e2e": "node tests/e2e/run-e2e-tests.js"
     },
     "dependencies": {
         "@kafkajs/confluent-schema-registry": "^3.9.0",
