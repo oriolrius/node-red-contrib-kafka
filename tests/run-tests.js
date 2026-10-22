@@ -64,6 +64,12 @@ async function runTests() {
             await simpleTest();
         }
 
+        // Broker options (timeouts) and compromised-CA rejection
+        console.log('\n--- Running test-broker-options.js ---');
+        await require('./test-broker-options.js')();
+        console.log('\n--- Running test-tls-security.js ---');
+        await require('./test-tls-security.js')();
+
         // Run compression test
         if (fs.existsSync(path.join(testDir, 'test-compression.js'))) {
             console.log('\n--- Running test-compression.js ---');
@@ -75,6 +81,8 @@ async function runTests() {
         console.log('✅ All basic tests passed');
         console.log('✅ Producer and Consumer nodes are working correctly');
         console.log('✅ Compression functionality verified');
+        // Explicit exit: KafkaJS leaves timed-out sockets half-open until the OS gives up
+        process.exit(0);
 
     } catch (error) {
         console.error('\n❌ Test runner failed:', error.message);

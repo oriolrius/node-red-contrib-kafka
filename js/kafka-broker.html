@@ -4,6 +4,16 @@
     <p>"Hosts" can contain multiple brokers separated by commas, e.g.: localhost:9092,broker2:9092</p>
     <p>Supports SASL authentication (PLAIN, SCRAM-SHA-256, SCRAM-SHA-512) and TLS/SSL encryption.</p>
     <p>With TLS enabled, connections whose certificate chain goes through one of the compromised eMudhra intermediate CAs (October 2026) are refused, whatever trust store Node.js uses.</p>
+    <h3>Timeouts</h3>
+    <dl class="message-properties">
+        <dt class="optional">Connect timeout <span class="property-type">ms</span></dt>
+        <dd>Time to wait for a TCP/TLS connection to a broker. Default 1000. Raise it for high-latency links or slow TLS handshakes.</dd>
+        <dt class="optional">Auth timeout <span class="property-type">ms</span></dt>
+        <dd>Time to wait for SASL authentication. Default 10000.</dd>
+        <dt class="optional">Request timeout <span class="property-type">ms</span></dt>
+        <dd>Time to wait for a broker response to a request. Default 30000.</dd>
+    </dl>
+    <p>Leave a timeout empty to keep the KafkaJS default.</p>
 </script>
 
 <script type="text/html" data-template-name="oriolrius-kafka-broker">
@@ -75,6 +85,21 @@
 	</div>
 
 	<div class="form-row">
+		<label for="node-config-input-connectiontimeout"><i class="fa fa-clock-o"></i> Connect timeout</label>
+		<input id="node-config-input-connectiontimeout" type="text" placeholder="1000 (ms, KafkaJS default)">
+	</div>
+
+	<div class="form-row">
+		<label for="node-config-input-authenticationtimeout"><i class="fa fa-clock-o"></i> Auth timeout</label>
+		<input id="node-config-input-authenticationtimeout" type="text" placeholder="10000 (ms, KafkaJS default)">
+	</div>
+
+	<div class="form-row">
+		<label for="node-config-input-requesttimeout"><i class="fa fa-clock-o"></i> Request timeout</label>
+		<input id="node-config-input-requesttimeout" type="text" placeholder="30000 (ms, KafkaJS default)">
+	</div>
+
+	<div class="form-row">
 		<input type="checkbox" id="node-config-input-useiot" style="display: inline-block; width: auto; vertical-align: top;">
 		<label for="node-config-input-useiot" style="width: auto">Enable IoT Cloud Configuration</label>
 	</div>
@@ -122,6 +147,11 @@
 
 	const optionHtml = dataTypes.map(({value,label})=>`<option value="${value}">${label}</option>\n`);
 
+	// Empty (KafkaJS default) or a positive integer number of milliseconds
+	function timeoutValidator(v) {
+		return v === undefined || v === null || String(v).trim() === '' || /^[1-9][0-9]*$/.test(String(v).trim());
+	}
+
     RED.nodes.registerType('oriolrius-kafka-broker',{
         category: 'config',
         icon: "setting.png",
@@ -140,6 +170,10 @@
 			privatekey: {required:false},
 			passphrase: {required:false},
 			selfsign: {value: false,required: false},
+
+			connectiontimeout: {value: '', required: false, validate: timeoutValidator},
+			authenticationtimeout: {value: '', required: false, validate: timeoutValidator},
+			requesttimeout: {value: '', required: false, validate: timeoutValidator},
 
 			useiot: {value: false},
 			model: {required:false, value: "use"},

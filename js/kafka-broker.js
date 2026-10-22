@@ -4,6 +4,13 @@ module.exports = function (RED) {
     const { Kafka } = require('kafkajs');
     const { checkServerIdentity } = require('./tls-security');
 
+    // Optional KafkaJS client timeouts (ms). Empty keeps the KafkaJS default.
+    const TIMEOUT_FIELDS = {
+        connectiontimeout: 'connectionTimeout',
+        authenticationtimeout: 'authenticationTimeout',
+        requesttimeout: 'requestTimeout'
+    };
+
     function KafkaBrokerNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
@@ -69,6 +76,20 @@ module.exports = function (RED) {
                 node.debug(`[Kafka Broker] SASL username configured: ${config.username}`);
             } else {
                 node.debug(`[Kafka Broker] SASL disabled`);
+            }
+
+            for (const [field, option] of Object.entries(TIMEOUT_FIELDS)) {
+                const raw = config[field];
+                if (raw === undefined || raw === null || String(raw).trim() === '') {
+                    continue;
+                }
+                const value = Number(raw);
+                if (!Number.isInteger(value) || value <= 0) {
+                    node.warn(`[Kafka Broker] Ignoring invalid ${option} "${raw}": must be a positive integer (ms)`);
+                    continue;
+                }
+                options[option] = value;
+                node.debug(`[Kafka Broker] ${option} set to ${value} ms`);
             }
 
             node.debug(`[Kafka Broker] Final connection options prepared`);
