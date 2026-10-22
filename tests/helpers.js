@@ -10,13 +10,14 @@ function loadNode(modulePath, nodes = {}) {
             createNode: function (node, config) {
                 node.warnings = [];
                 node.errors = [];
+                node.errorMsgs = [];
                 node.statuses = [];
                 node.sent = [];
                 node.handlers = {};
                 node.debug = () => {};
                 node.log = () => {};
                 node.warn = (msg) => node.warnings.push(msg);
-                node.error = (msg) => node.errors.push(msg);
+                node.error = (text, msg) => { node.errors.push(text); node.errorMsgs.push(msg); };
                 node.status = (status) => node.statuses.push(status);
                 node.send = (msg) => node.sent.push(msg);
                 node.on = (event, fn) => { node.handlers[event] = fn; };
@@ -39,21 +40,42 @@ function createNode(Constructor, config) {
 
 // Closes a node created with createNode (clears intervals, disconnects clients)
 function closeNode(node) {
-    return new Promise(resolve => node.handlers.close ? node.handlers.close(resolve) : resolve());
+    const close = node.handlers.close;
+    if (!close) {
+        return Promise.resolve();
+    }
+    // close(done) callback style, or async close() without parameters
+    return close.length > 0 ? new Promise(resolve => close(resolve)) : Promise.resolve(close());
 }
 
-// Fake broker config node whose KafkaJS producer records what would be sent
-function fakeBroker() {
+// Fake broker config node: the KafkaJS producer records what would be sent, the consumer
+// keeps its eachMessage handler so tests can deliver messages (broker.deliver)
+function fakeBroker({ sendError = null } = {}) {
     const sent = [];
+    const consumerState = { subscribed: null, eachMessage: null, running: false };
     const producer = {
         connect: async () => {},
         disconnect: async () => {},
         on: () => {},
-        send: async (record) => { sent.push(record); return [{ topicName: record.topic, partition: 0, errorCode: 0 }]; }
+        send: async (record) => {
+            if (sendError) {
+                throw new Error(sendError);
+            }
+            sent.push(record);
+            return [{ topicName: record.topic, partition: 0, errorCode: 0 }];
+        }
+    };
+    const consumer = {
+        connect: async () => {},
+        disconnect: async () => {},
+        subscribe: async (opts) => { consumerState.subscribed = opts; },
+        run: async ({ eachMessage }) => { consumerState.eachMessage = eachMessage; consumerState.running = true; }
     };
     return {
         sent,
-        getKafka: () => ({ producer: () => producer }),
+        consumerState,
+        deliver: (value, topic = 't1') => consumerState.eachMessage({ topic, partition: 0, message: { value, offset: '0', key: null, timestamp: '0' } }),
+        getKafka: () => ({ producer: () => producer, consumer: () => consumer }),
         getIotConfig: () => ({ useiot: false })
     };
 }

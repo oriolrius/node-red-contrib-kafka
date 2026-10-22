@@ -74,8 +74,24 @@ const tests = [
         await h.registerSchema(`${t}-value`, 'AVRO', AVRO); // the consumer needs the subject at start
         const out = await publish(producer(t, { autoRegister: true, autoSchema: AVRO }), [{ id: 'e1', count: 3 }]);
         assert.strictEqual(out[0].payload.success, true);
-        // Avro values come back as avsc record instances (unchanged behaviour): compare by value
-        assert.deepStrictEqual(JSON.parse(JSON.stringify(await consume(t, 1))), [{ id: 'e1', count: 3 }]);
+        const [payload] = await consume(t, 1);
+        assert.strictEqual(Object.getPrototypeOf(payload), Object.prototype, 'plain object, not an avsc record');
+        assert.deepStrictEqual(payload, { id: 'e1', count: 3 });
+    }],
+
+    ['Consumer started before the subject exists still receives (Avro auto-registered later)', async () => {
+        const t = topic('late-subject');
+        await h.createTopics([t]);
+        const captured = await h.deploy([
+            broker(),
+            consumer(t),
+            producer(t, { autoRegister: true, autoSchema: AVRO })
+        ], ['c', 'p']);
+        await h.waitReady('c');
+        await h.waitReady('p');
+        h.getNode('p').receive({ payload: { id: 'late', count: 1 } });
+        await h.waitFor(() => captured.c.length >= 1, { timeout: 30000, what: 'message on consumer' });
+        assert.deepStrictEqual(captured.c[0].payload, { id: 'late', count: 1 });
     }],
 
     ['Protobuf + registry, local .proto auto-registered, non-first message type', async () => {

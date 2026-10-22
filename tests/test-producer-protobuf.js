@@ -146,7 +146,8 @@ async function testProducerProtobuf() {
         await send(node, { id: 'r1', value: 'not a number', extra: 1 });
         assert.strictEqual(broker.sent.length, 0);
         assert.match(node.errors[0], /value: number expected; extra: unknown field/);
-        assert.match(node.sent[0][1].payload.error, /Protobuf validation error/);
+        assert.match(node.errorMsgs[0].payload.error, /Protobuf validation error/);
+        assert.strictEqual(node.sent.length, 0);
         await closeNode(node);
     });
 

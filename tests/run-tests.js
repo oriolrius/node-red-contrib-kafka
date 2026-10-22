@@ -73,6 +73,8 @@ async function runTests() {
         await require('./test-protobuf-wire.js')();
         console.log('\n--- Running test-producer-protobuf.js ---');
         await require('./test-producer-protobuf.js')();
+        console.log('\n--- Running test-node-fixes.js ---');
+        await require('./test-node-fixes.js')();
 
         // Run compression test
         if (fs.existsSync(path.join(testDir, 'test-compression.js'))) {
