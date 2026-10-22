@@ -2,7 +2,7 @@ services:
   broker:
     image: apache/kafka:4.1.0
     container_name: kafka-e2e-test
-    hostname: localhost
+    hostname: broker
     ports:
       - "58092:58092"
     environment:
@@ -10,11 +10,12 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: "broker,controller"
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
-      KAFKA_LISTENERS: "PLAINTEXT://:58092,CONTROLLER://:29093"
-      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:58092"
+      # PLAINTEXT for the tests on the host, INTERNAL for containers (Schema Registry)
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_LISTENERS: "PLAINTEXT://:58092,INTERNAL://:19092,CONTROLLER://:29093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:58092,INTERNAL://broker:19092"
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@localhost:29093"
-      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
 
       # Sensible single-node defaults
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -29,3 +30,24 @@ services:
       timeout: 10s
       retries: 10
       start_period: 30s
+
+  # Only started by the Schema Registry suites: docker compose --profile registry up
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.9.2
+    container_name: schema-registry-e2e-test
+    profiles: ["registry"]
+    depends_on:
+      broker:
+        condition: service_healthy
+    ports:
+      - "58081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "PLAINTEXT://broker:19092"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/subjects || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s

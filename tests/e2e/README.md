@@ -57,6 +57,16 @@ npm run test:e2e
 
 `harness.js` holds the shared helpers (Kafka, Node-RED, deploy, capture, `waitFor`).
 
+### Schema Registry E2E Test
+
+Adds Confluent Schema Registry (compose profile `registry`, port 58081):
+
+```bash
+npm run test:e2e:registry
+```
+
+Covers Avro (regression), Protobuf with a local `.proto` (auto-registered, non-first message type), Protobuf with the schema read from the registry (nested message type), raw Protobuf, rejection of invalid payloads, and interoperability in both directions with Confluent's `kafka-protobuf-console-producer` / `kafka-protobuf-console-consumer`.
+
 ## Test Environment
 
 - Kafka Broker: `localhost:58092`
