@@ -3,6 +3,7 @@
     <p>This node defines the broker configuration that will be used by Kafka Send, Kafka Receive, and Kafka Schema Send nodes.</p>
     <p>"Hosts" can contain multiple brokers separated by commas, e.g.: localhost:9092,broker2:9092</p>
     <p>Supports SASL authentication (PLAIN, SCRAM-SHA-256, SCRAM-SHA-512) and TLS/SSL encryption.</p>
+    <p>With TLS enabled, connections whose certificate chain goes through one of the compromised eMudhra intermediate CAs (October 2026) are refused, whatever trust store Node.js uses.</p>
 </script>
 
 <script type="text/html" data-template-name="oriolrius-kafka-broker">

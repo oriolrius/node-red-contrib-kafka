@@ -60,6 +60,10 @@ This library provides comprehensive SASL authentication support based on the `ka
 
 These enhanced authentication mechanisms provide better security compared to the original `kafka-node` implementations.
 
+### Compromised eMudhra CAs
+
+In October 2026 the private keys of eight eMudhra intermediate CAs were found to be recoverable ([details](https://emudhra.we-have-a-problem.com/)). Node.js releases before 22.23.4 / 24.22.1 / 26.12.1, and unpatched system CA bundles, still trust them. With TLS enabled, the broker node refuses any certificate chain that goes through one of them, whatever trust store is in use. Updating Node.js is still recommended.
+
 ## Installation
 ```
 npm install @oriolrius/node-red-contrib-kafka

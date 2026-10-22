@@ -138,3 +138,6 @@ tests-real/
 *.backup
 *.bak
 *.orig
+
+# Public test certificate chains (no private keys)
+!tests/fixtures/emudhra-chains/*.pem

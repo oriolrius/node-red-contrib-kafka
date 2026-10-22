@@ -2,6 +2,7 @@
 module.exports = function (RED) {
     const fs = require('fs');
     const { Kafka } = require('kafkajs');
+    const { checkServerIdentity } = require('./tls-security');
 
     function KafkaBrokerNode(config) {
         RED.nodes.createNode(this, config);
@@ -52,6 +53,7 @@ module.exports = function (RED) {
                     node.debug(`[Kafka Broker] Passphrase configured for private key`);
                 }
                 options.ssl.rejectUnauthorized = !config.selfsign;
+                options.ssl.checkServerIdentity = checkServerIdentity;
                 node.debug(`[Kafka Broker] SSL reject unauthorized: ${!config.selfsign}`);
             } else {
                 node.debug(`[Kafka Broker] TLS disabled, using plain connection`);
