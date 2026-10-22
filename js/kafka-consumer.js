@@ -83,14 +83,19 @@ module.exports = function(RED) {
                     return;
                 }
 
-                // Get or register schema if needed
+                // Get or register schema if needed. A subject that does not exist yet is not fatal:
+                // every message carries its schema ID and is decoded with it
                 try {
                     await node.getOrRegisterSchema();
                     node.status({fill:"yellow",shape:"ring",text:"Schema validated"});
                 } catch (error) {
-                    node.error(`[Kafka Schema Consumer] Schema validation failed: ${error.message}`);
-                    node.status({fill:"red",shape:"ring",text:`Schema failed: ${error.message.substring(0, 15)}...`});
-                    return;
+                    if (error.subjectNotFound) {
+                        node.warn(`[Kafka Schema Consumer] ${error.message}; consuming anyway, messages are decoded with the schema ID they carry`);
+                    } else {
+                        node.error(`[Kafka Schema Consumer] Schema validation failed: ${error.message}`);
+                        node.status({fill:"red",shape:"ring",text:`Schema failed: ${error.message.substring(0, 15)}...`});
+                        return;
+                    }
                 }
             } else {
                 node.debug(`[Kafka Consumer] Schema validation disabled, skipping Schema Registry setup`);
@@ -285,13 +290,17 @@ module.exports = function(RED) {
                 } catch (error) {
                     if (error.message.includes('Subject') && error.message.includes('not found')) {
                         node.debug(`[Kafka Schema Consumer] Schema subject not found: ${config.schemaSubject}`);
-                        throw new Error(`Schema subject '${config.schemaSubject}' not found`);
+                        const notFound = new Error(`Schema subject '${config.schemaSubject}' not found`);
+                        notFound.subjectNotFound = true;
+                        throw notFound;
                     } else {
                         throw error;
                     }
                 }
             } catch (error) {
-                node.error(`[Kafka Schema Consumer] Schema operation failed: ${error.message}`);
+                if (!error.subjectNotFound) {
+                    node.error(`[Kafka Schema Consumer] Schema operation failed: ${error.message}`);
+                }
                 throw error;
             }
         };

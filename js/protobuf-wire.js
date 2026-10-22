@@ -273,8 +273,24 @@ function decodeConfluent(root, buffer) {
     return { schemaId, type, value: decodeRaw(type, buffer.subarray(payloadOffset)) };
 }
 
+// avsc decodes Avro records into instances of generated classes; flows expect plain objects
+function toPlain(value) {
+    if (Array.isArray(value)) {
+        return value.map(toPlain);
+    }
+    if (value === null || typeof value !== 'object' || Buffer.isBuffer(value) || value instanceof Uint8Array || value instanceof Date) {
+        return value;
+    }
+    const out = {};
+    for (const key of Object.keys(value)) {
+        out[key] = toPlain(value[key]);
+    }
+    return out;
+}
+
 // Schema Registry decoder for consumers: Protobuf schemas are decoded here (any message of the
-// .proto, real message indexes), everything else goes through the registry client unchanged
+// .proto, real message indexes), everything else goes through the registry client and is
+// returned as plain objects
 function createSchemaDecoder(schemaRegistry) {
     const roots = new Map(); // schema ID -> parsed .proto root, or null for non-Protobuf schemas
     return {
@@ -285,7 +301,7 @@ function createSchemaDecoder(schemaRegistry) {
                 roots.set(schemaId, found.schemaType === 'PROTOBUF' ? parseSchema(found.schema) : null);
             }
             const root = roots.get(schemaId);
-            return root ? decodeConfluent(root, buffer).value : schemaRegistry.decode(buffer);
+            return root ? decodeConfluent(root, buffer).value : toPlain(await schemaRegistry.decode(buffer));
         },
         clear: () => roots.clear()
     };
@@ -293,6 +309,7 @@ function createSchemaDecoder(schemaRegistry) {
 
 module.exports = {
     createSchemaDecoder,
+    toPlain,
     parseSchema,
     resolveType,
     messageIndexes,
