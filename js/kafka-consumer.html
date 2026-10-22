@@ -108,6 +108,9 @@
 </script>
 
 <script type="text/javascript">
+(function() {
+"use strict";
+
     RED.nodes.registerType('oriolrius-kafka-consumer', {
         category: 'IOT',
         paletteLabel: "Kafka Receive",
@@ -165,4 +168,6 @@
             }
         }
     });
+
+})();
 </script>

@@ -159,6 +159,9 @@
 </script>
 
 <script type="text/javascript">
+(function() {
+"use strict";
+
     RED.nodes.registerType('oriolrius-kafka-history-reader', {
         category: 'IOT',
         paletteLabel: "kafka history",
@@ -221,4 +224,6 @@
             }
         }
     });
+
+})();
 </script>

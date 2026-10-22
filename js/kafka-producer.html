@@ -148,6 +148,9 @@
 </script>
 
 <script type="text/javascript">
+(function() {
+"use strict";
+
     RED.nodes.registerType('oriolrius-kafka-producer', {
         category: 'IOT',
         paletteLabel: "Kafka Send",
@@ -314,4 +317,6 @@
             this.fields = fields;
         }
     });
+
+})();
 </script>
